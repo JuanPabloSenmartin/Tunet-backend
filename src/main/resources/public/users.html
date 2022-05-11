@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Home</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+</head>
+
+<body>
+<script>
+    function loadUsers() {
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+            if (this.readyState === 4 && this.status === 200) {
+                let users = JSON.parse(this.response);
+
+
+                let root = document.getElementById("ajax-example");
+                root.children = undefined
+                for (const user of users) {
+                    var li = document.createElement("li");
+                    li.setAttribute('id',user.email);
+                    li.appendChild(document.createTextNode(user.email));
+                    root.appendChild(li);
+                }
+            }
+        };
+        xhttp.open("GET", "/users", true);
+        xhttp.send();
+    }
+
+</script>
+
+<h1>Usuarios</h1>
+<button onclick="loadUsers()">Fetch users</button>
+<div>
+    <ul id="ajax-example"></ul>
+</div>
+</body>
+</html>

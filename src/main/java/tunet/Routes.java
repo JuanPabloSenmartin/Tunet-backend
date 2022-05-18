@@ -23,12 +23,15 @@ public class Routes {
 
     public static final String REGISTER_ROUTE = "/register";
     public static final String LOGIN_ROUTE = "/login";
+    public static final String POST_ROUTE = "/post";
+
 
 
     private static TunetSystem system;
 
     public void create(TunetSystem system) {
         this.system = system;
+
         routes();
     }
 
@@ -92,7 +95,7 @@ public class Routes {
             getToken(req)
                     .ifPresentOrElse(token -> {
                         emailByToken.invalidate(token);
-                        res.status(204);
+                        res.status(201);
                     }, () -> {
                         res.status(404);
                     });
@@ -129,6 +132,90 @@ public class Routes {
             return res.body();
         });
 
+
+
+        //persist a new post
+        post(POST_ROUTE, (req, res) -> {
+            PostForm form = PostForm.createFromJson(req.body());
+            if (!form.isComplete()){
+                res.status(408);
+                res.body("Uncompleted form");
+                return res.body();
+            }
+            Post post = system.addPost(form);
+
+            if(post != null){
+                res.status(201);
+                res.body("post created");
+            }
+            else {
+                res.status(409);
+                res.body("error");
+            }
+            return res.body();
+        });
+
+        //get mail from token
+        post("/mail", (req, res) -> {
+            String token = removeFirstandLast(req.body());;
+            String mail = emailByToken.getIfPresent(token);
+            if (mail.equals("")){
+                res.body("ERROR");
+                res.status(404);
+            }
+            else{
+                res.status(201);
+                res.body(JsonParser.toJson(mail));
+            }
+            return res.body();
+        });
+
+        //get posts values of a user
+        post("/posts", (req, res) -> {
+            String token = removeFirstandLast(req.body());
+            String mail = emailByToken.getIfPresent(token);
+
+            final List<Post> posts = system.getPosts(mail);
+            res.status(201);
+            res.body(JsonParser.toJson(posts));
+            return res.body();
+        });
+
+        //add artist to an artist list of a post
+
+        post("/artistList", (req, res) -> {
+            ArtistListForm form = ArtistListForm.createFromJson(req.body());
+            if (!form.isComplete()){
+                res.body("ERROR");
+                res.status(404);
+            }
+            String mail = emailByToken.getIfPresent(form.getToken());
+
+            system.addArtistList(form.getPostID(), mail);
+            res.status(201);
+            res.body("");
+            return res.body();
+        });
+
+        //get artist list from postID
+
+        post("/getArtistList", (req,res)-> {
+            String postID = removeFirstandLast(req.body());
+
+            List<ArtistListInPost> artistList = system.getArtistList(postID);
+            res.status(201);
+            res.body(JsonParser.toJson(artistList));
+            return res.body();
+        });
+
+        //get all posts
+
+        get("/getAllPosts", (req, res) -> {
+            final List<Post> posts = system.getAllPosts();
+            res.status(201);
+            res.body(JsonParser.toJson(posts));
+            return res.body();
+        });
 
         //LIST OF USERS
         /*

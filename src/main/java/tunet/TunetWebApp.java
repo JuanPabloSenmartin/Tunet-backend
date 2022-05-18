@@ -19,8 +19,7 @@ public class TunetWebApp {
     public void start() {
         startDatabase();
         startWebServer();
-        //EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("tunet-db");
-        //EntityManagers.setFactory(entityManagerFactory);
+
     }
 
     public void stop() {

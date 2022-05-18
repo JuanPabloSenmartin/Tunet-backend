@@ -1,10 +1,10 @@
 package tunet;
 
-import tunet.model.EditProfileForm;
-import tunet.model.RegistrationUserForm;
-import tunet.model.User;
+import tunet.model.*;
 import tunet.persistence.EntityManagers;
 import tunet.persistence.Transactions;
+import tunet.repository.ArtistLists;
+import tunet.repository.Posts;
 import tunet.repository.Users;
 
 import javax.persistence.EntityManager;
@@ -102,5 +102,35 @@ public class TunetSystem {
         return map;
     }
 
+    public Post addPost(PostForm form){
+        return runInTransaction(datasource -> {
+            final Posts posts = datasource.posts();
+            return posts.createPost(form);
+        });
+    }
 
+    public void addArtistList(String postID, String artistEmail){
+        runInTransaction(datasource -> {
+            final ArtistLists artistLists = datasource.artistLists();
+            return artistLists.createArtistList(postID, artistEmail);
+        });
+    }
+
+
+    public List<Post> getPosts(String mail) {
+        return runInTransaction(
+                ds -> ds.posts().listFromMail(mail)
+        );
+    }
+    public List<ArtistListInPost> getArtistList(String postID) {
+        return runInTransaction(
+                ds -> ds.artistLists().listFromPostID(postID)
+        );
+    }
+
+    public List<Post> getAllPosts() {
+        return runInTransaction(
+                ds -> ds.posts().listAllPosts()
+        );
+    }
 }

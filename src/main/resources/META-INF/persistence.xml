@@ -9,6 +9,8 @@
         </description>
 
         <class>tunet.model.User</class>
+        <class>tunet.model.Post</class>
+        <class>tunet.model.ArtistListInPost</class>
 
         <properties>
             <property name="javax.persistence.jdbc.driver" value="org.hsqldb.jdbc.JDBCDriver" />

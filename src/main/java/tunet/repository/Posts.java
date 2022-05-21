@@ -1,17 +1,13 @@
 package tunet.repository;
 import tunet.model.Post;
 import tunet.model.PostForm;
-import tunet.model.RegistrationUserForm;
-import tunet.model.User;
-import tunet.repository.Posts;
 import tunet.persistence.Transactions;
 import tunet.persistence.EntityManagers;
-
 import javax.persistence.EntityManager;
 import java.util.List;
 import java.util.Optional;
 
-import static tunet.persistence.Transactions.tx;
+
 public class Posts {
     private final EntityManager entityManager;
 

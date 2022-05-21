@@ -50,12 +50,6 @@ public class TunetSystem {
         );
     }
 
-    public List<User> listUsers() {
-        return runInTransaction(
-                ds -> ds.users().list()
-        );
-    }
-
     public boolean validPassword(String password, User foundUser) {
         // Super dummy implementation. Zero security
         return foundUser.getPassword().equals(password);

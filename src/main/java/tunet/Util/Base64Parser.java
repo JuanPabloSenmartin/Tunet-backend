@@ -16,7 +16,7 @@ public class Base64Parser {
         if (base64img == null || base64img.equals("")) return null;
         String[] strings = base64img.split(",");
         String extension;
-        switch (strings[0]) {//check image's extension
+        switch (strings[0]) {//check file's extension
             case "data:image/jpeg;base64":
                 extension = "jpeg";
                 break;
@@ -26,7 +26,7 @@ public class Base64Parser {
             case "data:audio/mpeg;base64":
                 extension = "mpeg";
                 break;
-            default://should write cases for more images types
+            default:
                 extension = "jpg";
                 break;
 
@@ -34,7 +34,6 @@ public class Base64Parser {
         //convert base64 string to binary data
         byte[] data = DatatypeConverter.parseBase64Binary(strings[1]);
 
-        //C:\Users\juamp\faculty\Tunet-backend\src\main\resources\images\
         String path = "src\\main\\resources\\images\\" + type + mail + "." + extension;
         File file = new File(path);
 
@@ -67,6 +66,7 @@ public class Base64Parser {
         return prefix + base64;
     }
 
+    //returns prefix of the base64
     private static String getPrefix(String path) {
         String[] strings = path.split(Pattern.quote("."));
         String prefix;
@@ -78,7 +78,7 @@ public class Base64Parser {
             case "png":
                 prefix = "data:image/png;base64,";
                 break;
-            case "jpg"://should write cases for more images types
+            case "jpg":
                 prefix = "data:image/jpg;base64,";
                 break;
             default:

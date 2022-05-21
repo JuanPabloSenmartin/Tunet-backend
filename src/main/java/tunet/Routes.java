@@ -3,12 +3,9 @@ package tunet;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import spark.*;
-import spark.template.freemarker.FreeMarkerEngine;
-import tunet.Util.Base64Parser;
 import tunet.Util.JsonParser;
 import tunet.model.*;
 
-import javax.xml.bind.DatatypeConverter;
 import java.io.*;
 import java.util.*;
 
@@ -17,12 +14,6 @@ import static spark.Spark.*;
 import static tunet.Util.JsonParser.toJson;
 
 public class Routes {
-
-
-    /**
-     * ROUTES
-     **/
-
 
     public static final String REGISTER_ROUTE = "/register";
     public static final String LOGIN_ROUTE = "/login";
@@ -218,17 +209,6 @@ public class Routes {
             res.body(JsonParser.toJson(posts));
             return res.body();
         });
-
-        //LIST OF USERS
-        /*
-        authorizedGet("/users", (req, res) -> {
-            final List<User> users = system.listUsers();
-            return JsonParser.toJson(users);
-        });
-
-        authorizedGet("/users", (req, res) -> getToken(req).map(JsonParser::toJson));
-        authorizedGet("/users", (req, res) -> getToken(req).map(JsonParser::toJson));
-        */
     }
     private static String removeFirstandLast(String str) {
         //in token there are extra "" at the first and last characters.
@@ -251,11 +231,6 @@ public class Routes {
         return res.body();
     }
 
-
-    private void authorizedGet(final String path, final Route route) {
-        get(path, (request, response) -> authorize(route, request, response));
-    }
-
     private void authorizedDelete(final String path, final Route route) {
         delete(path, (request, response) -> authorize(route, request, response));
     }
@@ -267,12 +242,6 @@ public class Routes {
             response.status(401);
             return "Unauthorized";
         }
-    }
-
-    private Optional<User> getUser(Request req) {
-        return getToken(req)
-                .map(emailByToken::getIfPresent)
-                .flatMap(email -> system.findUserByEmail(email));
     }
 
     private final Cache<String, String> emailByToken = CacheBuilder.newBuilder()
@@ -307,11 +276,6 @@ public class Routes {
 
     private boolean isAuthenticated(String token) {
         return emailByToken.getIfPresent(token) != null;
-    }
-
-    private static Optional<User> getAuthenticatedUser(Request request) {
-        final String email = request.session().attribute("email");
-        return Optional.ofNullable(email).flatMap(system::findUserByEmail);
     }
 
 }

@@ -1,8 +1,6 @@
 package tunet.repository;
 
 import tunet.model.ArtistListInPost;
-import tunet.model.Post;
-import tunet.repository.ArtistLists;
 import tunet.persistence.Transactions;
 import tunet.persistence.EntityManagers;
 import javax.persistence.EntityManager;
@@ -10,7 +8,6 @@ import javax.persistence.EntityManager;
 import java.util.List;
 import java.util.Optional;
 
-import static tunet.persistence.Transactions.tx;
 
 public class ArtistLists {
     private final EntityManager entityManager;

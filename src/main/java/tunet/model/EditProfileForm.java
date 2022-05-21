@@ -61,5 +61,6 @@ public class EditProfileForm {
     public String getUsername() {
         return username;
     }
+
     public String getPhoneNumber(){return phoneNumber;}
 }

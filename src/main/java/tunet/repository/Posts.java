@@ -22,11 +22,23 @@ public class Posts {
     }
 
     public Post createPost(PostForm form) {
-        final Post newPost = Post.create(form.getLocalEmail(), form.getDescription(), form.getTitle(), form.getDate());
+        int lastId = getLastId();
+        String newID = String.valueOf(lastId + 1);
+        final Post newPost = Post.create(newID, form.getLocalEmail(), form.getDescription(), form.getTitle(), form.getDate());
 
         if (exists(newPost.getId())) throw new IllegalStateException("Post id already exists.");
 
         return Transactions.persist(newPost);
+    }
+    private int getLastId(){
+        List<Post> list = getPostList();
+        Post post = list.get(list.size()-1);
+        return Integer.parseInt(post.getId());
+    }
+
+    private List<Post> getPostList() {
+        return entityManager.createQuery("SELECT u FROM Post u", Post.class)
+                .getResultList();
     }
 
     public boolean exists(String id) {

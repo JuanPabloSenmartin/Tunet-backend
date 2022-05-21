@@ -4,9 +4,12 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import spark.*;
 import spark.template.freemarker.FreeMarkerEngine;
+import tunet.Util.Base64Parser;
 import tunet.Util.JsonParser;
 import tunet.model.*;
 
+import javax.xml.bind.DatatypeConverter;
+import java.io.*;
 import java.util.*;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -29,9 +32,8 @@ public class Routes {
 
     private static TunetSystem system;
 
-    public void create(TunetSystem system) {
+    public void create(TunetSystem system) throws IOException {
         this.system = system;
-
         routes();
     }
 
@@ -236,7 +238,7 @@ public class Routes {
         sb.deleteCharAt(0);
         return sb.toString();
     }
-    private Object getProfile(Response res, Optional<User> user) {
+    private Object getProfile(Response res, Optional<User> user) throws IOException {
         if (user.isEmpty()){
             res.body("ERROR");
             res.status(404);
@@ -311,6 +313,7 @@ public class Routes {
         final String email = request.session().attribute("email");
         return Optional.ofNullable(email).flatMap(system::findUserByEmail);
     }
+
 }
 
 

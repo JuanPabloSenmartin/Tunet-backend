@@ -19,25 +19,21 @@ public class Post {
     private String date;
 
 
-    public Post(String localEmail, String description, String title, String date) {
-        this.id = newID();
+    public Post(String newID, String localEmail, String description, String title, String date) {
+        this.id = newID;
         this.localEmail = localEmail;
         this.description = description;
         this.title = title;
         this.date = date;
     }
 
-    public static String newID(){
-        idNumbers.addPostID();
-        return String.valueOf(idNumbers.postID);
-    }
 
     public Post() {
 
     }
 
-    public static Post create(String localEmail, String description, String title, String date) {
-        return new Post(localEmail, description, title, date);
+    public static Post create(String newID, String localEmail, String description, String title, String date) {
+        return new Post(newID, localEmail, description, title, date);
     }
 
     public String getId() {

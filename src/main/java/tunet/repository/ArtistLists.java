@@ -23,11 +23,25 @@ public class ArtistLists {
 
 
     public ArtistListInPost createArtistList(String postID, String artistEmail) {
-        final ArtistListInPost newArtistList = ArtistListInPost.create(postID, artistEmail);
+        int lastId = getLastId();
+        String newID = String.valueOf(lastId + 1);
+
+        final ArtistListInPost newArtistList = ArtistListInPost.create(newID, postID, artistEmail);
 
         if (exists(newArtistList.getId())) throw new IllegalStateException("Post id already exists.");
 
         return Transactions.persist(newArtistList);
+    }
+
+    private int getLastId(){
+        List<ArtistListInPost> list = getList();
+        ArtistListInPost artist = list.get(list.size()-1);
+        return Integer.parseInt(artist.getId());
+    }
+
+    private List<ArtistListInPost> getList() {
+        return entityManager.createQuery("SELECT u FROM ArtistListInPost u", ArtistListInPost.class)
+                .getResultList();
     }
 
     public boolean exists(String id) {

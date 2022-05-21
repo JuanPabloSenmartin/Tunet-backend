@@ -1,10 +1,15 @@
 package tunet.persistence;
 
+import tunet.Util.Base64Parser;
 import tunet.model.EditProfileForm;
 import tunet.model.User;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
+import javax.xml.bind.DatatypeConverter;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -28,13 +33,12 @@ public class Transactions {
             user.setDescription(form.getDescription());
             user.setLocation(form.getLocation());
             user.setUsername(form.getUsername());
-            user.setProfilePictureUrl(form.getProfilePictureUrl());
-            user.setPictureUrl(form.getPictureUrl());
-            user.setArtistVideoUrl(form.getArtistVideoUrl());
+            user.setProfilePictureUrl(Base64Parser.createImageFile(form.getProfilePictureUrl(), form.getEmail(), "profilePicture"));
+            user.setPictureUrl(Base64Parser.createImageFile(form.getPictureUrl(), form.getEmail(), "normalPicture"));
+            user.setArtistAudioUrl(Base64Parser.createImageFile(form.getArtistAudioUrl(), form.getEmail(), "audio"));
             user.setPhoneNumber(form.getPhoneNumber());
             return user;
         });
-
     }
 
     public static <R> R tx(Function<EntityManager, R> s) {

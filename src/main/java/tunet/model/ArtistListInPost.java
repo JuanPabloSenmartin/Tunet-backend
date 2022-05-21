@@ -13,8 +13,8 @@ public class ArtistListInPost {
 
     private String artistEmail;
 
-    public ArtistListInPost(String postID, String artistEmail) {
-        this.id = newID();
+    public ArtistListInPost(String newID, String postID, String artistEmail) {
+        this.id = newID;
         this.postID = postID;
         this.artistEmail = artistEmail;
     }
@@ -22,13 +22,8 @@ public class ArtistListInPost {
 
     }
 
-    public static ArtistListInPost create(String postID, String artistEmail) {
-        return new ArtistListInPost(postID, artistEmail);
-    }
-
-    public static String newID(){
-        idNumbers.addArtistListID();
-        return String.valueOf(idNumbers.artistListID);
+    public static ArtistListInPost create(String newID, String postID, String artistEmail) {
+        return new ArtistListInPost(newID, postID, artistEmail);
     }
 
     public String getId() {

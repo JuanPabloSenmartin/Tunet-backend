@@ -11,7 +11,7 @@ public class EditProfileForm {
 
     private final String pictureUrl;
 
-    private final String artistVideoUrl;
+    private final String artistAudioUrl;
 
     private final String location;
 
@@ -19,12 +19,12 @@ public class EditProfileForm {
 
     private final String phoneNumber;
 
-    public EditProfileForm(String email, String profilePictureUrl, String description, String pictureUrl, String artistVideoUrl, String location, String username, String phoneNumber) {
+    public EditProfileForm(String email, String profilePictureUrl, String description, String pictureUrl, String artistAudioUrl, String location, String username, String phoneNumber) {
         this.email = email;
         this.profilePictureUrl = profilePictureUrl;
         this.description = description;
         this.pictureUrl = pictureUrl;
-        this.artistVideoUrl = artistVideoUrl;
+        this.artistAudioUrl = artistAudioUrl;
         this.location = location;
         this.username = username;
         this.phoneNumber = phoneNumber;
@@ -46,8 +46,8 @@ public class EditProfileForm {
         return pictureUrl;
     }
 
-    public String getArtistVideoUrl() {
-        return artistVideoUrl;
+    public String getArtistAudioUrl() {
+        return artistAudioUrl;
     }
 
     public String getLocation() {

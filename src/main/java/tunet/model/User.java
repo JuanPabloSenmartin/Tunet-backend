@@ -23,7 +23,7 @@ public class User {
 
     private String pictureUrl;
 
-    private String artistVideoUrl;
+    private String artistAudioUrl;
 
     private String location;
 
@@ -69,8 +69,8 @@ public class User {
         return pictureUrl;
     }
 
-    public String getArtistVideoUrl() {
-        return artistVideoUrl;
+    public String getArtistAudioUrl() {
+        return artistAudioUrl;
     }
 
     public String getLocation() {
@@ -93,8 +93,8 @@ public class User {
         this.pictureUrl = pictureUrl;
     }
 
-    public void setArtistVideoUrl(String artistVideoUrl) {
-        this.artistVideoUrl = artistVideoUrl;
+    public void setArtistAudioUrl(String artistAudioUrl) {
+        this.artistAudioUrl = artistAudioUrl;
     }
 
     public void setLocation(String location) {
@@ -117,7 +117,7 @@ public class User {
         System.out.println("profilePictureUrl: " + profilePictureUrl);
         System.out.println("description: " + description);
         System.out.println("pictureUrl: " + pictureUrl);
-        System.out.println("artistVideoUrl: " + artistVideoUrl);
+        System.out.println("artistAudioUrl: " + artistAudioUrl);
         System.out.println("location: " + location);
         System.out.println("phoneNumber: " + phoneNumber);
     }

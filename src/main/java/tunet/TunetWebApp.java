@@ -1,17 +1,14 @@
 package tunet;
 
 
+import tunet.Chat.ChatManager;
+import tunet.Chat.ChatWebSocketHandler;
 import tunet.persistence.DatabaseServer;
-import tunet.persistence.EntityManagers;
 import spark.Spark;
-
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
 
 import java.io.IOException;
 
-import static spark.Spark.port;
-import static spark.Spark.staticFiles;
+import static spark.Spark.*;
 
 public class TunetWebApp {
 
@@ -37,6 +34,8 @@ public class TunetWebApp {
         staticFiles.location("public");
         port(4321);
         final TunetSystem system = TunetSystem.create("tunet-db");
+        new ChatManager(system);
+        webSocket("/chat", ChatWebSocketHandler.class);
         routes.create(system);
     }
 

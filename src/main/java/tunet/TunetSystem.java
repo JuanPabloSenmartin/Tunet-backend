@@ -1,5 +1,6 @@
 package tunet;
 
+import spark.Response;
 import tunet.Util.Base64Parser;
 import tunet.model.*;
 import tunet.persistence.EntityManagers;
@@ -105,11 +106,25 @@ public class TunetSystem {
         });
     }
 
-    public void addArtistList(String postID, String artistEmail){
-        runInTransaction(datasource -> {
+    public ArtistListInPost addArtistList(String postID, String artistEmail, Response res){
+        return runInTransaction(datasource -> {
             final ArtistLists artistLists = datasource.artistLists();
-            return artistLists.createArtistList(postID, artistEmail);
+            if (isRepeated(postID, artistEmail, artistLists)){
+                res.status(409);
+                res.body("repeated");
+                return null;
+            }
+            else{
+                return artistLists.createArtistList(postID, artistEmail);
+            }
         });
+    }
+    private boolean isRepeated(String postID, String artistEmail, ArtistLists artistLists){
+        List<String> postsIDs = artistLists.getPostIdsFromMail(artistEmail);
+        for (String postsID : postsIDs) {
+            if (postsID.equals(postID)) return true;
+        }
+        return false;
     }
 
 
@@ -125,8 +140,39 @@ public class TunetSystem {
     }
 
     public List<Post> getAllPosts() {
+
         return runInTransaction(
-                ds -> ds.posts().listAllPosts()
+                ds -> {//List<String> postsIDs = ds.artistLists().getPostIdsFromMail(mail);
+                    return ds.posts().listAllPosts();
+                }
+
         );
+    }
+
+    public String getProfPic(String mail) {
+        return runInTransaction(
+                ds -> {
+                    try {
+                        return ds.users().getProfPicFromMail(mail);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    return null;
+                }
+        );
+    }
+
+    public Chat addChats(String emailME, String emailHIM, String messageME) {
+        return runInTransaction(
+                ds -> {
+                    boolean isMEartist = isMEartist(emailME, ds.users());
+                    return ds.chats().addChat(emailME, emailHIM, messageME, isMEartist);
+                }
+        );
+    }
+
+    private boolean isMEartist(String emailME, Users users) {
+        Optional<User> user = users.findByEmail(emailME);
+        return user.get().isArtist();
     }
 }

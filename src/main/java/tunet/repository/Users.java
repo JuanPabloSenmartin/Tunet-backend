@@ -1,11 +1,12 @@
 package tunet.repository;
 
+import tunet.Util.Base64Parser;
 import tunet.model.RegistrationUserForm;
 import tunet.model.User;
 import tunet.persistence.Transactions;
 import tunet.persistence.EntityManagers;
 import javax.persistence.EntityManager;
-import java.util.List;
+import java.io.IOException;
 import java.util.Optional;
 
 public class Users {
@@ -33,10 +34,12 @@ public class Users {
                 .findFirst();
     }
 
-    public List<User> list() {
-        return entityManager.createQuery("SELECT u FROM User u", User.class)
-                .getResultList();
+
+
+
+    public String getProfPicFromMail(String mail) throws IOException {
+        Optional<User> user = findByEmail(mail);
+        if (user.isEmpty()) return null;
+        return Base64Parser.convertToBase64(user.get().getProfilePictureUrl());
     }
-
-
 }

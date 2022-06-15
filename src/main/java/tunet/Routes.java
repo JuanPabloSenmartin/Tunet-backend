@@ -6,6 +6,7 @@ import spark.*;
 import tunet.Util.JsonParser;
 import tunet.model.*;
 
+
 import java.io.*;
 import java.util.*;
 
@@ -152,7 +153,8 @@ public class Routes {
         post("/mail", (req, res) -> {
             String token = removeFirstandLast(req.body());;
             String mail = emailByToken.getIfPresent(token);
-            if (mail.equals("")){
+
+            if (mail == null || mail.equals("")){
                 res.body("ERROR");
                 res.status(404);
             }
@@ -175,7 +177,6 @@ public class Routes {
         });
 
         //add artist to an artist list of a post
-
         post("/artistList", (req, res) -> {
             ArtistListForm form = ArtistListForm.createFromJson(req.body());
             if (!form.isComplete()){
@@ -184,8 +185,8 @@ public class Routes {
             }
             String mail = emailByToken.getIfPresent(form.getToken());
 
-            system.addArtistList(form.getPostID(), mail);
-            res.status(201);
+            ArtistListInPost artistList = system.addArtistList(form.getPostID(), mail, res);
+            if (artistList != null) res.status(201);
             res.body("");
             return res.body();
         });
@@ -204,20 +205,37 @@ public class Routes {
         //get all posts
 
         get("/getAllPosts", (req, res) -> {
+            //String token = removeFirstandLast(req.body());
+            //String mail = emailByToken.getIfPresent(token);
+
             final List<Post> posts = system.getAllPosts();
             res.status(201);
             res.body(JsonParser.toJson(posts));
             return res.body();
         });
+
+        //gets profile pic of a user
+        post("/getPicFromMail", (req, res) -> {
+            String mail = removeFirstandLast(req.body());
+            String profPic = system.getProfPic(mail);
+            res.status(201);
+            res.body(JsonParser.toJson(profPic));
+            return res.body();
+        });
+
     }
+
+
+    //in token there are extra "" at the first and last characters.
+    //this function removes the extra ""
     private static String removeFirstandLast(String str) {
-        //in token there are extra "" at the first and last characters.
-        //this function removes the extra ""
         StringBuilder sb = new StringBuilder(str);
         sb.deleteCharAt(str.length() - 1);
         sb.deleteCharAt(0);
         return sb.toString();
     }
+
+    //returns a json of a map that has attributes of the given user
     private Object getProfile(Response res, Optional<User> user) throws IOException {
         if (user.isEmpty()){
             res.body("ERROR");
@@ -248,6 +266,7 @@ public class Routes {
             .expireAfterAccess(30, MINUTES)
             .build();
 
+    //authenticates the user
     private Optional<String> authenticate(AuthRequest req) {
         return system.findUserByEmail(req.getEmail()).flatMap(foundUser -> {
             if (system.validPassword(req.getPassword(), foundUser)) {

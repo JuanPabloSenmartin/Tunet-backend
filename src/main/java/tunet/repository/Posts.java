@@ -28,6 +28,7 @@ public class Posts {
     }
     private int getLastId(){
         List<Post> list = getPostList();
+        if (list.isEmpty()) return 1;
         Post post = list.get(list.size()-1);
         return Integer.parseInt(post.getId());
     }

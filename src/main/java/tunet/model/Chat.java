@@ -8,21 +8,24 @@ import javax.persistence.Table;
 @Table(name = "CHATS")
 public class Chat {
     @Id
-    private String email1;
+    private String id;
 
-    private String email2;
+    private String email1;//local
 
-    private String messages;
+    private String email2;//artist
+
+    private String messages;//1messageLocal~2messageArtist~
 
     public Chat(){}
 
-    public Chat(String email1, String email2, String messages) {
+    public Chat(String email1, String email2, String messages, String id) {
         this.email1 = email1;
         this.email2 = email2;
         this.messages = messages;
+        this.id = id;
     }
-    public static Chat create(String email1,String email2, String messages) {
-        return new Chat(email1,email2, messages);
+    public static Chat create(String email1,String email2, String messages, String id) {
+        return new Chat(email1,email2, messages, id);
     }
 
     public String getEmail1() {
@@ -47,5 +50,9 @@ public class Chat {
 
     public void setMessages(String messages) {
         this.messages = messages;
+    }
+
+    public String getId() {
+        return id;
     }
 }

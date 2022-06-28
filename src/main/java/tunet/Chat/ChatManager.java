@@ -7,18 +7,18 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ChatManager {
-    static Map<String, Session> emailSessionMap = new ConcurrentHashMap<>();
-    private static TunetSystem system;
+    public Map<String, Session> emailSessionMap = new ConcurrentHashMap<>();
+    private final TunetSystem system;
 
     public ChatManager(TunetSystem system) {
-        ChatManager.system = system;
+        this.system = system;
     }
 
-    public static void sendBackMessages(String message, Session session) throws IOException {
+    public void handleMessage(String message, Session session) throws IOException {
         //emailME~emailHIM~message
         String [] strings = message.split("~");
-        checkIfMEexist(strings[0], session);
-        Session sessionHIM = HIMexist(strings[1]);
+        //checkIfMEexist(strings[0], session);
+        Session sessionHIM = getHIMsession(strings[1]);
         String messageHIM = "2" + strings[2]; //2 means that he receives message
         if (sessionHIM != null){
             sessionHIM.getRemote().sendString(messageHIM);
@@ -28,16 +28,18 @@ public class ChatManager {
         persistOperation(strings[0], strings[1], strings[2]);
     }
 
-    private static void persistOperation(String emailME, String emailHIM, String messageME) {
-        system.addChats(emailME, emailHIM, messageME);
+    private boolean isArtistMe(String mail) {
+        return system.findUserByEmail(mail).get().isArtist();
     }
 
-    private static Session HIMexist(String him) {
+    public void persistOperation(String emailME, String emailHIM, String messageME) {
+        system.addChats(emailME, emailHIM, messageME, isArtistMe(emailME));
+    }
+
+    private Session getHIMsession(String him) {
         if (emailSessionMap.containsKey(him)) return emailSessionMap.get(him);
         return null;
     }
 
-    private static void checkIfMEexist(String me, Session session) {
-        if (!emailSessionMap.containsKey(me)) emailSessionMap.put(me, session);
-    }
+
 }

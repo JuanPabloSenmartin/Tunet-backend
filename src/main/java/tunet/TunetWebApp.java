@@ -34,8 +34,8 @@ public class TunetWebApp {
         staticFiles.location("public");
         port(4321);
         final TunetSystem system = TunetSystem.create("tunet-db");
-        new ChatManager(system);
-        webSocket("/chat", ChatWebSocketHandler.class);
+        ChatManager chatManager = new ChatManager(system);
+        webSocket("/chat", new ChatWebSocketHandler(chatManager));
         routes.create(system);
     }
 

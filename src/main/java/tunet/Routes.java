@@ -205,9 +205,6 @@ public class Routes {
         //get all posts
 
         get("/getAllPosts", (req, res) -> {
-            //String token = removeFirstandLast(req.body());
-            //String mail = emailByToken.getIfPresent(token);
-
             final List<Post> posts = system.getAllPosts();
             res.status(201);
             res.body(JsonParser.toJson(posts));
@@ -223,6 +220,41 @@ public class Routes {
             return res.body();
         });
 
+        //gets chat data from user
+        post("/chatUsers", (req, res) -> {
+            String token = removeFirstandLast(req.body());
+            String mail = emailByToken.getIfPresent(token);
+
+            final List<ChatForm> chatForms = system.getChatsInfo(mail);
+            res.status(201);
+            res.body(JsonParser.toJson(chatForms));
+            return res.body();
+        });
+        //get chat of a user him
+        post("/getChatOfaUser", (req, res) -> {
+            String str = removeFirstandLast(req.body());
+            String [] s = str.split("~");
+            String emailME = s[0];
+            String emailHIM = s[1];
+            ChatForm chat = system.getCertainChat(emailME, emailHIM);
+            res.status(201);
+            res.body(JsonParser.toJson(chat));
+            return res.body();
+        });
+
+        //get chat of users
+        post("/getMessages", (req, res) -> {
+            String str = removeFirstandLast(req.body());
+            String [] s = str.split("~");
+            String emailME = s[0];
+            String emailHIM = s[1];
+            String messages = system.getMessages(emailME, emailHIM);
+            res.status(201);
+            System.out.println("pide chat");
+            System.out.println(messages);
+            res.body(JsonParser.toJson(messages));
+            return res.body();
+        });
     }
 
 
@@ -248,6 +280,8 @@ public class Routes {
         }
         return res.body();
     }
+
+
 
     private void authorizedDelete(final String path, final Route route) {
         delete(path, (request, response) -> authorize(route, request, response));

@@ -13,10 +13,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 
 public class TunetSystem {
@@ -42,7 +39,6 @@ public class TunetSystem {
     public void editProfile(EditProfileForm form) {
         User user = findUserByEmail(form.getEmail()).get();
         Transactions.update(user, form);
-        user.printUser();
     }
 
     public Optional<User> findUserByEmail(String email) {
@@ -162,17 +158,91 @@ public class TunetSystem {
         );
     }
 
-    public Chat addChats(String emailME, String emailHIM, String messageME) {
+    public void addChats(String emailME, String emailHIM, String messageME, boolean isArtistMe) {
+        Chat chat = getChat(emailME, emailHIM);
+        if (chat == null){
+            if (isArtistMe){
+                createChat(emailHIM, emailME, "2" + messageME);
+            }
+            else{
+                createChat(emailME, emailHIM, "1" + messageME);
+            }
+        }
+        else{
+            if (isArtistMe){
+                Transactions.updateChat(chat, "~2" + messageME);
+            }
+            else{
+                Transactions.updateChat(chat, "~1" + messageME);
+            }
+        }
+    }
+    private Chat createChat(String emailHIM, String emailME, String initialMessage) {
         return runInTransaction(
                 ds -> {
-                    boolean isMEartist = isMEartist(emailME, ds.users());
-                    return ds.chats().addChat(emailME, emailHIM, messageME, isMEartist);
+                    return ds.chats().createChat(emailME, emailHIM, initialMessage);
                 }
         );
     }
 
-    private boolean isMEartist(String emailME, Users users) {
-        Optional<User> user = users.findByEmail(emailME);
-        return user.get().isArtist();
+    public List<ChatForm> getChatsInfo(String mail) throws IOException {
+        List<ChatForm> chatForms = new ArrayList<>();
+        User me = findUserByEmail(mail).get();
+        User him;
+        List<Chat> chats = getChatsOfUser(mail, me.isArtist());
+        for (Chat chat : chats) {
+            if (me.isArtist()) him = findUserByEmail(chat.getEmail1()).get();
+            else him = findUserByEmail(chat.getEmail2()).get();
+            //start completing chat forms
+            chatForms.add(new ChatForm(
+                    chat.getId(),
+                    mail,
+                    him.getEmail(),
+                    Base64Parser.convertToBase64(him.getProfilePictureUrl()),
+                    Base64Parser.convertToBase64(me.getProfilePictureUrl()),
+                    him.getUsername(),
+                    me.getUsername(),
+                    String.valueOf(me.isArtist())
+                    ));
+        }
+        return chatForms;
+    }
+    private List<Chat> getChatsOfUser(String mail, boolean isArtistME){
+        return runInTransaction(
+                ds -> ds.chats().chatsFromMail(mail, isArtistME)
+        );
+    }
+
+    public ChatForm getCertainChat(String emailME, String emailHIM) throws IOException {
+        Chat chat = getChat(emailME, emailHIM);
+        if (chat == null) {
+            chat = createChat(emailME, emailHIM, "");
+        }
+        User me = findUserByEmail(emailME).get();
+        User him = findUserByEmail(emailHIM).get();
+        return new ChatForm(
+                chat.getId(),
+                emailME,
+                him.getEmail(),
+                Base64Parser.convertToBase64(him.getPictureUrl()),
+                Base64Parser.convertToBase64(me.getPictureUrl()),
+                him.getUsername(),
+                me.getUsername(),
+                String.valueOf(me.isArtist()));
+    }
+
+    private Chat getChat(String emailME, String emailHIM){
+        boolean isArtistME = findUserByEmail(emailME).get().isArtist();
+        return runInTransaction(
+                ds -> ds.chats().certainChat(emailME,emailHIM, isArtistME)
+        );
+    }
+
+    public String getMessages(String emailME, String emailHIM) {
+        Chat chat = getChat(emailME, emailHIM);
+        if (chat == null) {
+            chat = createChat(emailME, emailHIM, "");
+        }
+        return chat.getMessages();
     }
 }

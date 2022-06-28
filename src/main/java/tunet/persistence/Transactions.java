@@ -1,6 +1,7 @@
 package tunet.persistence;
 
 import tunet.Util.Base64Parser;
+import tunet.model.Chat;
 import tunet.model.EditProfileForm;
 import tunet.model.User;
 
@@ -34,6 +35,13 @@ public class Transactions {
             user.setArtistAudioUrl(Base64Parser.createImageFile(form.getArtistAudioUrl(), form.getEmail(), "audio"));
             user.setPhoneNumber(form.getPhoneNumber());
             return user;
+        });
+    }
+    public static void updateChat(Chat chat, String message){
+        tx(entityManager -> {
+            entityManager.merge(chat);
+            chat.setMessages(chat.getMessages() + message);
+            return chat;
         });
     }
 

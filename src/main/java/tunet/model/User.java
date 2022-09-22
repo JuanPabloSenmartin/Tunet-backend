@@ -29,6 +29,8 @@ public class User {
 
     private String phoneNumber;
 
+    private String rating;//SumOfStars-AmountOfRatingsGiven
+
     public User() {
     }
 
@@ -37,6 +39,7 @@ public class User {
         this.password = password;
         this.username = username;
         this.isArtist = isArtist;
+        this.rating = "0-0";
     }
 
     public static User create(String email,String username, String password, String isArtist) {
@@ -107,6 +110,14 @@ public class User {
 
     public void setPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
+    }
+
+    public String getRating() {
+        return rating;
+    }
+
+    public void setRating(String rating) {
+        this.rating = rating;
     }
 
     public void printUser(){

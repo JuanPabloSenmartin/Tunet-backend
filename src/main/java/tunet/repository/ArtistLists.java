@@ -1,6 +1,7 @@
 package tunet.repository;
 
 import tunet.model.ArtistListInPost;
+import tunet.model.Post;
 import tunet.persistence.Transactions;
 import tunet.persistence.EntityManagers;
 import javax.persistence.EntityManager;
@@ -18,10 +19,8 @@ public class ArtistLists {
         this.entityManager = entityManager;
     }
 
-
-
     public ArtistListInPost createArtistList(String postID, String artistEmail) {
-        int lastId = getLastId();
+        int lastId = getMaxId();
         String newID = String.valueOf(lastId + 1);
 
         final ArtistListInPost newArtistList = ArtistListInPost.create(newID, postID, artistEmail);
@@ -30,18 +29,21 @@ public class ArtistLists {
 
         return Transactions.persist(newArtistList);
     }
-
-    private int getLastId(){
+    private int getMaxId(){
         List<ArtistListInPost> list = getList();
-        ArtistListInPost artist = list.get(list.size()-1);
-        return Integer.parseInt(artist.getId());
+        int max = 1;
+        for (int i = list.size()-1; i >= 0; i--) {
+            int num = Integer.parseInt(list.get(i).getId());
+            if (num > max){
+                max = num;
+            }
+        }
+        return max;
     }
-
     private List<ArtistListInPost> getList() {
         return entityManager.createQuery("SELECT u FROM ArtistListInPost u", ArtistListInPost.class)
                 .getResultList();
     }
-
     public boolean exists(String id) {
         return findByID(id).isPresent();
     }
@@ -59,11 +61,20 @@ public class ArtistLists {
                 .getResultList();
     }
 
-    public List<String> getPostIdsFromMail(String artistEmail) {
+    public List<String> getPostIdsFromMail(String artistEmail, List<Post> posts) {
         List<ArtistListInPost> list = getArtistsFromMail(artistEmail);
         List<String> finalList = new ArrayList<>();
-        for (ArtistListInPost artistListInPost : list) {
-            finalList.add(artistListInPost.getPostID());
+        for (Post post : posts) {
+            boolean current = false;
+            for (ArtistListInPost artistListInPost : list) {
+                if (post.getId().equals(artistListInPost.getPostID())) {
+                    current = true;
+                    break;
+                }
+            }
+            if (!current) {
+                finalList.add(post.getId());
+            }
         }
         return finalList;
     }

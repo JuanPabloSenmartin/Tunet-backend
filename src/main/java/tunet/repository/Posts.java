@@ -4,6 +4,7 @@ import tunet.model.PostForm;
 import tunet.persistence.Transactions;
 import tunet.persistence.EntityManagers;
 import javax.persistence.EntityManager;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,7 +19,7 @@ public class Posts {
     }
 
     public Post createPost(PostForm form) {
-        int lastId = getLastId();
+        int lastId = getMaxId();
         String newID = String.valueOf(lastId + 1);
         final Post newPost = Post.create(newID, form.getLocalEmail(), form.getDescription(), form.getTitle(), form.getDate());
 
@@ -26,11 +27,16 @@ public class Posts {
 
         return Transactions.persist(newPost);
     }
-    private int getLastId(){
+    private int getMaxId(){
         List<Post> list = getPostList();
-        if (list.isEmpty()) return 1;
-        Post post = list.get(list.size()-1);
-        return Integer.parseInt(post.getId());
+        int max = 1;
+        for (int i = list.size()-1; i >= 0; i--) {
+            int num = Integer.parseInt(list.get(i).getId());
+            if (num > max){
+                max = num;
+            }
+        }
+        return max;
     }
 
     private List<Post> getPostList() {
@@ -59,4 +65,18 @@ public class Posts {
         return entityManager.createQuery("SELECT u FROM Post u", Post.class)
                 .getResultList();
     }
+    public List<Post> listThesePosts(List<String> postsIDs) {
+        List<Post> allPosts = listAllPosts();
+        List<Post> finalList = new ArrayList<>();
+        for (int i = 0; i < postsIDs.size(); i++) {
+            for (int j = 0; j < allPosts.size(); j++) {
+                Post currentPost = allPosts.get(j);
+                if (postsIDs.get(i).equals(currentPost.getId())){
+                    finalList.add(currentPost);
+                }
+            }
+        }
+        return finalList;
+    }
+
 }

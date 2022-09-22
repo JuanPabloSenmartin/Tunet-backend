@@ -22,6 +22,18 @@ public class Transactions {
             entityManager.persist(entity);
             return entity;
         });
+//        return txWithGivenEntity(entityManag, entityManager -> {
+//            entityManager.persist(entity);
+//            return entity;
+//        });
+    }
+    public static User updateRating(User user, String rating) {
+        return tx(entityManager -> {
+            entityManager.merge(user);
+
+            user.setRating(rating);
+            return user;
+        });
     }
 
     public static void update(User user, EditProfileForm form){
@@ -37,12 +49,18 @@ public class Transactions {
             return user;
         });
     }
-    public static void updateChat(Chat chat, String message){
-        tx(entityManager -> {
+    public static Chat updateChat(Chat chat, String message, EntityManager entityManagera){
+        return tx(entityManager -> {
             entityManager.merge(chat);
             chat.setMessages(chat.getMessages() + message);
             return chat;
         });
+//        return txWithGivenEntity(entityManagera, () -> {
+//            entityManagera.merge(chat);
+//            chat.setMessages(chat.getMessages() + message);
+//            return chat;
+//        }
+//        );
     }
 
     public static <R> R tx(Function<EntityManager, R> s) {
@@ -52,6 +70,21 @@ public class Transactions {
             tx.begin();
 
             R r = s.apply(currentEntityManager());
+
+            tx.commit();
+            return r;
+        } catch (Exception e) {
+            tx.rollback();
+            throw e;
+        }
+    }
+    public static <R> R txWithGivenEntity(EntityManager entityManager, Supplier<R> s) {
+        final EntityTransaction tx = entityManager.getTransaction();
+
+        try {
+            tx.begin();
+
+            R r = s.get();
 
             tx.commit();
             return r;
@@ -91,5 +124,6 @@ public class Transactions {
             throw e;
         }
     }
+
 
 }

@@ -6,6 +6,7 @@ import tunet.model.*;
 import tunet.persistence.EntityManagers;
 import tunet.persistence.Transactions;
 import tunet.repository.ArtistLists;
+import tunet.repository.Chats;
 import tunet.repository.Posts;
 import tunet.repository.Users;
 
@@ -82,6 +83,8 @@ public class TunetSystem {
             map.put("profilePictureUrl", Base64Parser.convertToBase64(user.getProfilePictureUrl()));
             map.put("location", user.getLocation());
             map.put("phoneNumber", user.getPhoneNumber());
+            map.put("rating", rating(user.getRating()));
+
         }
         else {
             map.put("email", user.getEmail());
@@ -91,8 +94,17 @@ public class TunetSystem {
             map.put("profilePictureUrl", Base64Parser.convertToBase64(user.getProfilePictureUrl()));
             map.put("location", user.getLocation());
             map.put("phoneNumber", user.getPhoneNumber());
+            map.put("rating", rating(user.getRating()));
         }
         return map;
+    }
+
+    private String rating(String rating) {
+        String [] str = rating.split("-");
+        int sumOfStars = Integer.parseInt(str[0]);
+        int amountOfRatingsGiven = Integer.parseInt(str[1]);
+        if(amountOfRatingsGiven == 0) return "0";
+        return String.valueOf(Math.round(sumOfStars/amountOfRatingsGiven));
     }
 
     public Post addPost(PostForm form){
@@ -105,25 +117,9 @@ public class TunetSystem {
     public ArtistListInPost addArtistList(String postID, String artistEmail, Response res){
         return runInTransaction(datasource -> {
             final ArtistLists artistLists = datasource.artistLists();
-            if (isRepeated(postID, artistEmail, artistLists)){
-                res.status(409);
-                res.body("repeated");
-                return null;
-            }
-            else{
                 return artistLists.createArtistList(postID, artistEmail);
-            }
         });
     }
-    private boolean isRepeated(String postID, String artistEmail, ArtistLists artistLists){
-        List<String> postsIDs = artistLists.getPostIdsFromMail(artistEmail);
-        for (String postsID : postsIDs) {
-            if (postsID.equals(postID)) return true;
-        }
-        return false;
-    }
-
-
     public List<Post> getPosts(String mail) {
         return runInTransaction(
                 ds -> ds.posts().listFromMail(mail)
@@ -135,11 +131,12 @@ public class TunetSystem {
         );
     }
 
-    public List<Post> getAllPosts() {
-
+    public List<Post> getAllPosts(String mail) {
         return runInTransaction(
-                ds -> {//List<String> postsIDs = ds.artistLists().getPostIdsFromMail(mail);
-                    return ds.posts().listAllPosts();
+                ds -> {
+                    Posts posts = ds.posts();
+                    List<String> postsIDs = ds.artistLists().getPostIdsFromMail(mail, posts.listAllPosts());
+                    return posts.listThesePosts(postsIDs);
                 }
 
         );
@@ -169,22 +166,27 @@ public class TunetSystem {
             }
         }
         else{
-            if (isArtistMe){
-                Transactions.updateChat(chat, "~2" + messageME);
-            }
-            else{
-                Transactions.updateChat(chat, "~1" + messageME);
-            }
+            runInTransaction(
+                    ds -> {
+                        Chats chats = ds.chats();
+                        if (isArtistMe){
+                            return chats.updateChat(chat, "~2" + messageME);
+                        }
+                        else{
+                            return chats.updateChat(chat, "~1" + messageME);
+                        }
+                    }
+            );
+
         }
     }
-    private Chat createChat(String emailHIM, String emailME, String initialMessage) {
+    private Chat createChat(String emailLocal, String emailArtist, String initialMessage) {
         return runInTransaction(
                 ds -> {
-                    return ds.chats().createChat(emailME, emailHIM, initialMessage);
+                        return ds.chats().createChat(emailLocal, emailArtist, initialMessage);
                 }
         );
     }
-
     public List<ChatForm> getChatsInfo(String mail) throws IOException {
         List<ChatForm> chatForms = new ArrayList<>();
         User me = findUserByEmail(mail).get();
@@ -215,11 +217,19 @@ public class TunetSystem {
 
     public ChatForm getCertainChat(String emailME, String emailHIM) throws IOException {
         Chat chat = getChat(emailME, emailHIM);
-        if (chat == null) {
-            chat = createChat(emailME, emailHIM, "");
-        }
         User me = findUserByEmail(emailME).get();
         User him = findUserByEmail(emailHIM).get();
+        if (chat == null) {
+            return new ChatForm(
+                    "0",
+                    emailME,
+                    him.getEmail(),
+                    Base64Parser.convertToBase64(him.getPictureUrl()),
+                    Base64Parser.convertToBase64(me.getPictureUrl()),
+                    him.getUsername(),
+                    me.getUsername(),
+                    String.valueOf(me.isArtist()));
+        }
         return new ChatForm(
                 chat.getId(),
                 emailME,
@@ -244,5 +254,11 @@ public class TunetSystem {
             chat = createChat(emailME, emailHIM, "");
         }
         return chat.getMessages();
+    }
+
+    public void addRating(String email, int rating) {
+        runInTransaction(
+                ds -> ds.users().updateRating(email, rating)
+        );
     }
 }

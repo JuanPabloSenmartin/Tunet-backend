@@ -10,10 +10,9 @@ import java.io.IOException;
 import java.util.Optional;
 
 public class Users {
-    private final EntityManager entityManager;
 
     public Users(EntityManager entityManager) {
-        this.entityManager = entityManager;
+
     }
     public User createUser(RegistrationUserForm signUpValues) {
         final User newUser = User.create(signUpValues.getEmail(),signUpValues.getUsername(), signUpValues.getPassword(), signUpValues.isArtist());
@@ -34,12 +33,20 @@ public class Users {
                 .findFirst();
     }
 
-
-
-
     public String getProfPicFromMail(String mail) throws IOException {
         Optional<User> user = findByEmail(mail);
         if (user.isEmpty()) return null;
         return Base64Parser.convertToBase64(user.get().getProfilePictureUrl());
+    }
+
+    public User updateRating(String email, int rating) {
+        User user = findByEmail(email).get();
+        String prevRating = user.getRating();
+        String [] str = prevRating.split("-");
+        int sumOfStars = Integer.parseInt(str[0]);
+        int amountOfRatingsGiven = Integer.parseInt(str[1]);
+        sumOfStars += rating;
+        amountOfRatingsGiven += 1;
+        return Transactions.updateRating(user, sumOfStars + "-" + amountOfRatingsGiven);
     }
 }

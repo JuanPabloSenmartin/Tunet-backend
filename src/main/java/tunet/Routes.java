@@ -177,6 +177,7 @@ public class Routes {
         });
 
         //add artist to an artist list of a post
+        //submit to a post
         post("/artistList", (req, res) -> {
             ArtistListForm form = ArtistListForm.createFromJson(req.body());
             if (!form.isComplete()){
@@ -204,8 +205,10 @@ public class Routes {
 
         //get all posts
 
-        get("/getAllPosts", (req, res) -> {
-            final List<Post> posts = system.getAllPosts();
+        post("/getAllPosts", (req, res) -> {
+            String token = removeFirstandLast(req.body());
+            String mail = emailByToken.getIfPresent(token);
+            final List<Post> posts = system.getAllPosts(mail);
             res.status(201);
             res.body(JsonParser.toJson(posts));
             return res.body();
@@ -230,6 +233,7 @@ public class Routes {
             res.body(JsonParser.toJson(chatForms));
             return res.body();
         });
+
         //get chat of a user him
         post("/getChatOfaUser", (req, res) -> {
             String str = removeFirstandLast(req.body());
@@ -250,11 +254,23 @@ public class Routes {
             String emailHIM = s[1];
             String messages = system.getMessages(emailME, emailHIM);
             res.status(201);
-            System.out.println("pide chat");
             System.out.println(messages);
             res.body(JsonParser.toJson(messages));
             return res.body();
         });
+        //add rating
+        post("/rating", (req, res) -> {
+            String str = removeFirstandLast(req.body());
+            String [] s = str.split("~");
+            int rating = Integer.parseInt(s[0]);
+            String email = s[1];
+
+            system.addRating(email, rating);
+            res.status(201);
+            res.body("");
+            return res.body();
+        });
+
     }
 
 

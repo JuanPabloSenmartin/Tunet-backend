@@ -7,12 +7,14 @@ public class PostForm {
     private final String description;
     private final String title;
     private final String date;
+    private final String[] genres;
 
-    public PostForm(String localEmail, String description, String title, String date) {
+    public PostForm(String localEmail, String description, String title, String date, String[] genres) {
         this.localEmail = localEmail;
         this.description = description;
         this.title = title;
         this.date = date;
+        this.genres = genres;
     }
 
     public static PostForm createFromJson(String body) {
@@ -35,6 +37,10 @@ public class PostForm {
 
     public String getDate() {
         return date;
+    }
+
+    public String[] getGenres() {
+        return genres;
     }
 
     public boolean isComplete() {

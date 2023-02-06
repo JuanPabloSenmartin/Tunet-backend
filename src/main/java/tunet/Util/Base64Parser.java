@@ -55,6 +55,56 @@ public class Base64Parser {
         //returns directory
         return path;
     }
+    public static String createImageFile(@Nullable String base64img, String mail, String type,int id){
+        if (base64img == null || base64img.equals("")) return null;
+        String[] strings = base64img.split(",");
+
+        String[] s1 = strings[0].split("/");
+        String[] s2 = s1[1].split(";");
+
+        String extension = s2[0];
+//        switch (strings[0]) {//check file's extension
+//            case "data:image/jpeg;base64":
+//                extension = "jpeg";
+//                break;
+//            case "data:image/png;base64":
+//                extension = "png";
+//                break;
+//            case "data:audio/mpeg;base64":
+//                extension = "mpeg";
+//                break;
+//            default:
+//                extension = "jpg";
+//                break;
+//
+//        }
+
+
+
+        //convert base64 string to binary data
+        byte[] data = DatatypeConverter.parseBase64Binary(strings[1]);
+
+        String path = "src\\main\\resources\\images\\" + type + mail + "id" + id + "." + extension;
+        File file = new File(path);
+
+        if(file.exists()){
+            try (OutputStream outputStream = new BufferedOutputStream(new FileOutputStream(file, false))) {
+                outputStream.write(data);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        else{
+            try (OutputStream outputStream = new BufferedOutputStream(new FileOutputStream(file))) {
+                outputStream.write(data);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        //returns directory
+        return path;
+    }
 
     //returns base64 of file in the path
     public static String convertToBase64(String path) throws IOException {
@@ -86,5 +136,15 @@ public class Base64Parser {
                 break;
         }
         return prefix;
+    }
+
+    public static void deletePath(String path){
+        try{
+            File file = new File(path);
+            file.delete();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
     }
 }

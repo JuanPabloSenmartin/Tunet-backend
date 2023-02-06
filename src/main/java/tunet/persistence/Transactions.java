@@ -1,9 +1,8 @@
 package tunet.persistence;
 
 import tunet.Util.Base64Parser;
-import tunet.model.Chat;
-import tunet.model.EditProfileForm;
-import tunet.model.User;
+import tunet.Util.LocationManager;
+import tunet.model.*;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
@@ -22,46 +21,60 @@ public class Transactions {
             entityManager.persist(entity);
             return entity;
         });
-//        return txWithGivenEntity(entityManag, entityManager -> {
-//            entityManager.persist(entity);
-//            return entity;
+    }
+    public static Chat persistNewChat(Chat chat, EntityManager entityManager) {
+        entityManager.persist(chat);
+        return chat;
+
+    }
+    public static <R> Object remove(R entity){
+        return tx(entityManager -> {
+            entityManager.remove(entity);
+            return null;
+        });
+    }
+//    public static User updateRating(User user, String rating) {
+//        return tx(entityManager -> {
+//            entityManager.merge(user);
+//            user.setRating(rating);
+//            return user;
 //        });
-    }
-    public static User updateRating(User user, String rating) {
-        return tx(entityManager -> {
-            entityManager.merge(user);
+//    }
+//    public static ArtistListInPost updateArtistListInPost(ArtistListInPost artistListInPost, boolean isAccepted){
+//        return tx(entityManager -> {
+//            artistListInPost.setAccepted(isAccepted ? "TRUE" : "FALSE");
+//            return artistListInPost;
+//        });
+//    }
+//    public static void updatePost(Post post, boolean isAccepted, String artistMail){
+//        tx(entityManager -> {
+//            if (isAccepted){
+//                post.setIsAccepted("TRUE");
+//                post.setAcceptedArtistEmail(artistMail);
+//            }
+//            else{
+//                post.setIsAccepted("FALSE");
+//                post.setAcceptedArtistEmail(null);
+//            }
+//            return post;
+//        });
+//    }
 
-            user.setRating(rating);
-            return user;
-        });
-    }
-
-    public static void update(User user, EditProfileForm form){
-        tx(entityManager -> {
-            entityManager.merge(user);
-            user.setDescription(form.getDescription());
-            user.setLocation(form.getLocation());
-            user.setUsername(form.getUsername());
-            user.setProfilePictureUrl(Base64Parser.createImageFile(form.getProfilePictureUrl(), form.getEmail(), "profilePicture"));
-            user.setPictureUrl(Base64Parser.createImageFile(form.getPictureUrl(), form.getEmail(), "normalPicture"));
-            user.setArtistAudioUrl(Base64Parser.createImageFile(form.getArtistAudioUrl(), form.getEmail(), "audio"));
-            user.setPhoneNumber(form.getPhoneNumber());
-            return user;
-        });
-    }
-    public static Chat updateChat(Chat chat, String message, EntityManager entityManagera){
-        return tx(entityManager -> {
-            entityManager.merge(chat);
-            chat.setMessages(chat.getMessages() + message);
-            return chat;
-        });
-//        return txWithGivenEntity(entityManagera, () -> {
-//            entityManagera.merge(chat);
+//    public static void updateUserProfilePicture(User user, String profilePic){
+//        tx(entityManager -> {
+//            Base64Parser.deletePath(user.getProfilePictureUrl());
+//            entityManager.merge(user);
+//            user.setProfilePictureUrl(Base64Parser.createImageFile(profilePic, user.getEmail(), "profilePicture"));
+//            return user;
+//        });
+//    }
+//    public static Chat updateChat(Chat chat, String message, EntityManager entityManagera){
+//        return tx(entityManager -> {
+//            entityManager.merge(chat);
 //            chat.setMessages(chat.getMessages() + message);
 //            return chat;
-//        }
-//        );
-    }
+//        });
+//    }
 
     public static <R> R tx(Function<EntityManager, R> s) {
         final EntityTransaction tx = currentEntityManager().getTransaction();

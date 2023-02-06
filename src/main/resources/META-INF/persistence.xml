@@ -12,6 +12,8 @@
         <class>tunet.model.Post</class>
         <class>tunet.model.ArtistListInPost</class>
         <class>tunet.model.Chat</class>
+        <class>tunet.model.Image</class>
+        <class>tunet.model.Song</class>
 
         <properties>
             <property name="javax.persistence.jdbc.driver" value="org.hsqldb.jdbc.JDBCDriver" />

@@ -21,15 +21,14 @@ public class User {
 
     private String description;
 
-    private String pictureUrl;
-
-    private String artistAudioUrl;
-
     private String location;
 
     private String phoneNumber;
 
     private String rating;//SumOfStars-AmountOfRatingsGiven
+    private String coordinates;
+
+
 
     public User() {
     }
@@ -48,6 +47,8 @@ public class User {
 
 
     //GETTERS AND SETTERS
+
+
     public String getEmail() {
         return email;
     }
@@ -58,7 +59,7 @@ public class User {
 
     public String getUsername(){return username;}
 
-    public boolean isArtist(){return isArtist.equals("TRUE");}
+    public boolean isArtist(){return isArtist.toLowerCase().equals("true");}
 
     public String getProfilePictureUrl() {
         return profilePictureUrl;
@@ -68,13 +69,6 @@ public class User {
         return description;
     }
 
-    public String getPictureUrl() {
-        return pictureUrl;
-    }
-
-    public String getArtistAudioUrl() {
-        return artistAudioUrl;
-    }
 
     public String getLocation() {
         return location;
@@ -92,13 +86,6 @@ public class User {
         this.description = description;
     }
 
-    public void setPictureUrl(String pictureUrl) {
-        this.pictureUrl = pictureUrl;
-    }
-
-    public void setArtistAudioUrl(String artistAudioUrl) {
-        this.artistAudioUrl = artistAudioUrl;
-    }
 
     public void setLocation(String location) {
         this.location = location;
@@ -116,8 +103,28 @@ public class User {
         return rating;
     }
 
+
     public void setRating(String rating) {
         this.rating = rating;
+    }
+    public int getIntRating(){
+        if (rating == null || rating.equals("")) return 0;
+        String [] str = rating.split("-");
+        int sumOfStars = Integer.parseInt(str[0]);
+        int amountOfRatingsGiven = Integer.parseInt(str[1]);
+        if(amountOfRatingsGiven == 0) return 0;
+        return Math.round(sumOfStars / amountOfRatingsGiven);
+    }
+
+    public double[] getCoordinates() {
+        if (coordinates == null || coordinates.isEmpty()) return new double[]{};
+        String[] s = coordinates.split(",");
+        return new double[]{Double.parseDouble(s[0]), Double.parseDouble(s[1])};
+    }
+
+
+    public void setCoordinates(String coordinates) {
+        this.coordinates = coordinates;
     }
 
     public void printUser(){
@@ -127,8 +134,6 @@ public class User {
         System.out.println("isArtist: " + isArtist);
         System.out.println("profilePictureUrl: " + profilePictureUrl);
         System.out.println("description: " + description);
-        System.out.println("pictureUrl: " + pictureUrl);
-        System.out.println("artistAudioUrl: " + artistAudioUrl);
         System.out.println("location: " + location);
         System.out.println("phoneNumber: " + phoneNumber);
     }

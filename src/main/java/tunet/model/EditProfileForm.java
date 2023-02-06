@@ -5,13 +5,7 @@ import tunet.Util.JsonParser;
 public class EditProfileForm {
     private final String email;
 
-    private final String profilePictureUrl;
-
     private final String description;
-
-    private final String pictureUrl;
-
-    private final String artistAudioUrl;
 
     private final String location;
 
@@ -19,12 +13,9 @@ public class EditProfileForm {
 
     private final String phoneNumber;
 
-    public EditProfileForm(String email, String profilePictureUrl, String description, String pictureUrl, String artistAudioUrl, String location, String username, String phoneNumber) {
+    public EditProfileForm(String email, String description, String location, String username, String phoneNumber, String genres) {
         this.email = email;
-        this.profilePictureUrl = profilePictureUrl;
         this.description = description;
-        this.pictureUrl = pictureUrl;
-        this.artistAudioUrl = artistAudioUrl;
         this.location = location;
         this.username = username;
         this.phoneNumber = phoneNumber;
@@ -34,21 +25,11 @@ public class EditProfileForm {
         return JsonParser.fromJson(body, EditProfileForm.class);
     }
 
-    public String getProfilePictureUrl() {
-        return profilePictureUrl;
-    }
 
     public String getDescription() {
         return description;
     }
 
-    public String getPictureUrl() {
-        return pictureUrl;
-    }
-
-    public String getArtistAudioUrl() {
-        return artistAudioUrl;
-    }
 
     public String getLocation() {
         return location;
@@ -63,4 +44,5 @@ public class EditProfileForm {
     }
 
     public String getPhoneNumber(){return phoneNumber;}
+
 }

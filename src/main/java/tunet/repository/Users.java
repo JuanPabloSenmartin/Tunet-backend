@@ -10,9 +10,9 @@ import java.io.IOException;
 import java.util.Optional;
 
 public class Users {
-
+    private final EntityManager entityManager;
     public Users(EntityManager entityManager) {
-
+        this.entityManager = entityManager;
     }
     public User createUser(RegistrationUserForm signUpValues) {
         final User newUser = User.create(signUpValues.getEmail(),signUpValues.getUsername(), signUpValues.getPassword(), signUpValues.isArtist());
@@ -27,9 +27,14 @@ public class Users {
     }
 
     public Optional<User> findByEmail(String email) {
-        return Transactions.tx(() -> EntityManagers.currentEntityManager()
-                .createQuery("SELECT u FROM User u WHERE u.email LIKE :email", User.class)
-                .setParameter("email", email).getResultList()).stream()
+//        return Transactions.tx(() ->
+////                        EntityManagers.currentEntityManager()
+//                        EntityManagers.currentEntityManager()
+//                .createQuery("SELECT u FROM User u WHERE u.email LIKE :email", User.class)
+//                .setParameter("email", email).getResultList()).stream()
+//                .findFirst();
+        return entityManager.createQuery("SELECT u FROM User u WHERE u.email LIKE :email", User.class)
+                .setParameter("email", email).getResultList().stream()
                 .findFirst();
     }
 
@@ -47,6 +52,11 @@ public class Users {
         int amountOfRatingsGiven = Integer.parseInt(str[1]);
         sumOfStars += rating;
         amountOfRatingsGiven += 1;
-        return Transactions.updateRating(user, sumOfStars + "-" + amountOfRatingsGiven);
+//        return Transactions.updateRating(user, sumOfStars + "-" + amountOfRatingsGiven);
+        return updateRating(user, sumOfStars + "-" + amountOfRatingsGiven);
+    }
+    private User updateRating(User user, String rating) {
+        user.setRating(rating);
+        return user;
     }
 }

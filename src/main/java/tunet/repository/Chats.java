@@ -7,7 +7,6 @@ import tunet.persistence.Transactions;
 import javax.persistence.EntityManager;
 import java.util.List;
 
-import static tunet.persistence.Transactions.tx;
 
 public class Chats {
     private final EntityManager entityManager;
@@ -20,7 +19,7 @@ public class Chats {
         String newID = String.valueOf(lastId + 1);
         final Chat newChat = Chat.create(email1, email2, initialMessage, newID);
 
-        return Transactions.persist(newChat);
+        return Transactions.persistNewChat(newChat, entityManager);
     }
     private int getMaxId(){
         List<Chat> list = getChatList();
@@ -34,24 +33,29 @@ public class Chats {
         return max;
     }
     private List<Chat> getChatList() {
-        return entityManager.createQuery("SELECT u FROM Chat u", Chat.class)
+        return
+//                EntityManagers.currentEntityManager()
+        entityManager
+                        .createQuery("SELECT u FROM Chat u", Chat.class)
                 .getResultList();
     }
     private List<Chat> findChatsByLocalEmail(String email1) {
-        return tx(() -> EntityManagers.currentEntityManager()
-        //return entityManager
+//        return tx(() ->
+                        //EntityManagers.currentEntityManager()
+        return
+                entityManager
                 .createQuery("SELECT u FROM Chat u WHERE u.email1 LIKE :email1", Chat.class)
                 .setParameter("email1", email1).getResultList()
-        )
+//        )
         ;
     }
     private List<Chat> findChatsByArtistEmail(String email2) {
-        return tx(() -> EntityManagers.currentEntityManager()
-        //return entityManager
+//        return tx(() ->
+                        //EntityManagers.currentEntityManager()
+                return entityManager
                 .createQuery("SELECT u FROM Chat u WHERE u.email2 LIKE :email2", Chat.class)
-                .setParameter("email2", email2).getResultList()
-        )
-        ;
+                .setParameter("email2", email2).getResultList();
+//        );
     }
     public List<Chat> chatsFromMail(String mail, boolean isArtistME) {
         if (isArtistME){
@@ -75,8 +79,8 @@ public class Chats {
         }
         return null;
     }
-    public Chat updateChat(Chat chat, String message){
-        return Transactions.updateChat(chat, message, entityManager);
-    }
+//    public Chat updateChat(Chat chat, String message){
+//        return Transactions.updateChat(chat, message, EntityManagers.currentEntityManager());
+//    }
 
 }

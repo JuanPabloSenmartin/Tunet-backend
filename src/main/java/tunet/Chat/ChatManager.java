@@ -23,7 +23,7 @@ public class ChatManager {
         if (sessionHIM != null){
             sessionHIM.getRemote().sendString(messageHIM);
         }
-        String messageME = "1" + strings[2]; //1 means that its my message
+        String messageME = "1" + strings[2]; //1 means that it's my message
         session.getRemote().sendString(messageME); // and send it back
         persistOperation(strings[0], strings[1], strings[2]);
     }

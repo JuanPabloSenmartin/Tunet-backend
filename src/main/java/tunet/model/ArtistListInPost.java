@@ -13,17 +13,20 @@ public class ArtistListInPost {
 
     private String artistEmail;
 
-    public ArtistListInPost(String newID, String postID, String artistEmail) {
+    private String accepted;
+
+    public ArtistListInPost(String newID, String postID, String artistEmail, String accepted) {
         this.id = newID;
         this.postID = postID;
         this.artistEmail = artistEmail;
+        this.accepted = accepted;
     }
     public ArtistListInPost(){
 
     }
 
     public static ArtistListInPost create(String newID, String postID, String artistEmail) {
-        return new ArtistListInPost(newID, postID, artistEmail);
+        return new ArtistListInPost(newID, postID, artistEmail, "FALSE");
     }
 
     public String getId() {
@@ -45,6 +48,17 @@ public class ArtistListInPost {
 
     public void setArtistEmail(String artistEmail) {
         this.artistEmail = artistEmail;
+    }
+
+    public String getAccepted() {
+        return accepted;
+    }
+    public boolean isAccepted(){
+        return !accepted.equals("FALSE");
+    }
+
+    public void setAccepted(String accepted) {
+        this.accepted = accepted;
     }
 
     public void printUser(){

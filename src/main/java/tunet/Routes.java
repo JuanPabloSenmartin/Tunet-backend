@@ -103,7 +103,7 @@ public class Routes {
         post("/viewOtherProfile", (req, res) -> {
             String mail = removeFirstandLast(req.body());
             Optional<User> user = system.findUserByEmail(mail);
-            return getProfile(res, user);
+            return getProfile(res, user, mail);
         });
 
 
@@ -113,7 +113,7 @@ public class Routes {
             String token = removeFirstandLast(req.body());;
             String mail = emailByToken.getIfPresent(token);
             Optional<User> user = system.findUserByEmail(mail);
-            return getProfile(res, user);
+            return getProfile(res, user, mail);
         });
 
         //PERSIST CHANGES OF PROFILE
@@ -170,7 +170,7 @@ public class Routes {
             String token = removeFirstandLast(req.body());
             String mail = emailByToken.getIfPresent(token);
 
-            final List<Post> posts = system.getPosts(mail);
+            final List<LocalPostInfo> posts = system.getPostsOfLocal(mail);
             res.status(201);
             res.body(JsonParser.toJson(posts));
             return res.body();
@@ -180,14 +180,21 @@ public class Routes {
         //submit to a post
         post("/artistList", (req, res) -> {
             ArtistListForm form = ArtistListForm.createFromJson(req.body());
-            if (!form.isComplete()){
-                res.body("ERROR");
-                res.status(404);
-            }
+
             String mail = emailByToken.getIfPresent(form.getToken());
 
-            ArtistListInPost artistList = system.addArtistList(form.getPostID(), mail, res);
+            ArtistListInPost artistList = system.addArtistList(form.getPostID(), mail);
             if (artistList != null) res.status(201);
+            res.body("");
+            return res.body();
+        });
+
+        //unsubmit from post
+        post("/deleteArtistFromPostList", (req, res) -> {
+            ArtistListForm form = ArtistListForm.createFromJson(req.body());
+            String mail = emailByToken.getIfPresent(form.getToken());
+            system.deleteArtistList(form.getPostID(), mail);
+            res.status(201);
             res.body("");
             return res.body();
         });
@@ -203,16 +210,14 @@ public class Routes {
             return res.body();
         });
 
-        //get all posts
-
-        post("/getAllPosts", (req, res) -> {
-            String token = removeFirstandLast(req.body());
-            String mail = emailByToken.getIfPresent(token);
-            final List<Post> posts = system.getAllPosts(mail);
+        post("/getAllPosts", ((req, res) -> {
+            FilterForm form = FilterForm.createFromJson(req.body());
+            final List<PostInfo> posts = system.getAllPosts(form);
             res.status(201);
             res.body(JsonParser.toJson(posts));
             return res.body();
-        });
+        }));
+
 
         //gets profile pic of a user
         post("/getPicFromMail", (req, res) -> {
@@ -271,6 +276,120 @@ public class Routes {
             return res.body();
         });
 
+        //returns all gallery images from a user
+        post("/getGalleryImages", (req, res) -> {
+            String mail = removeFirstandLast(req.body());
+            final List<String> images = system.getGalleryImagesFromEmail(mail);
+            res.status(201);
+            res.body(JsonParser.toJson(images));
+            return res.body();
+        });
+
+        //adds an image to gallery
+        post("/addGalleryImage", (req, res) -> {
+            GalleryImageForm imageForm = GalleryImageForm.createFromJson(req.body());
+            system.addImageToGallery(imageForm);
+            res.status(201);
+            res.body("");
+            return res.body();
+        });
+
+        //deletes an image from gallery
+        post("/deleteGalleryImage", (req, res) -> {
+            GalleryImageForm imageForm = GalleryImageForm.createFromJson(req.body());
+            system.deleteImageFromGallery(imageForm);
+            res.status(201);
+            res.body("");
+            return res.body();
+        });
+
+        //returns all songs
+        post("/getSongs", (req, res) -> {
+            String mail = removeFirstandLast(req.body());
+            final List<String> songs = system.getSongsFromEmail(mail);
+            res.status(201);
+            res.body(JsonParser.toJson(songs));
+            return res.body();
+        });
+
+        //adds song
+        post("/addSong", (req, res) -> {
+            GallerySongForm songForm = GallerySongForm.createFromJson(req.body());
+            system.addSongToGallery(songForm);
+            res.status(201);
+            res.body("");
+            return res.body();
+        });
+
+        //deletes song
+        post("/deleteSong", (req, res) -> {
+            GallerySongForm songForm = GallerySongForm.createFromJson(req.body());
+            system.deleteSongFromGallery(songForm);
+            res.status(201);
+            res.body("");
+            return res.body();
+        });
+
+        //deletes an image from gallery
+        post("/changeProfilePic", (req, res) -> {
+            GalleryImageForm imageForm = GalleryImageForm.createFromJson(req.body());
+            system.changeProfilePic(imageForm.getEmail(), imageForm.getImageUrl());
+            res.status(201);
+            res.body("");
+            return res.body();
+        });
+
+
+        //get old posts
+        post("/getOldPosts", (req, res) -> {
+            String token = removeFirstandLast(req.body());
+            String mail = emailByToken.getIfPresent(token);
+
+            final List<OldPostInfo> posts = system.getOldPosts(mail);
+            res.status(201);
+            res.body(JsonParser.toJson(posts));
+            return res.body();
+        });
+
+
+        post("/getPostFeed", (req, res) -> {
+            FilterForm form = FilterForm.createFromJson(req.body());
+            String mail = emailByToken.getIfPresent(form.getToken());
+            final List<PostInfo> posts = system.getFilteredPosts(mail, form);
+            res.status(201);
+            res.body(JsonParser.toJson(posts));
+            return res.body();
+        });
+
+        //get posts
+        post("/getPostsInfo", (req, res) -> {
+            PostTypeForm form = PostTypeForm.createFromJson(req.body());
+            String mail = emailByToken.getIfPresent(form.getToken());
+            final List<PostInfo> posts = system.getSpecificPosts(mail, form);
+            res.status(201);
+            res.body(JsonParser.toJson(posts));
+            return res.body();
+        });
+
+        //get posts
+        post("/getLocalPostsInfo", (req, res) -> {
+            PostTypeForm form = PostTypeForm.createFromJson(req.body());
+            String mail = emailByToken.getIfPresent(form.getToken());
+            final List<LocalPostInfo> posts = system.getLocalSpecificPosts(mail, form);
+            res.status(201);
+            res.body(JsonParser.toJson(posts));
+            return res.body();
+        });
+
+        //accept artist
+        post("/acceptArtistInPost", (req, res) -> {
+            AcceptArtistForm form = AcceptArtistForm.createFromJson(req.body());
+            system.acceptArtistInPost(form);
+            res.status(201);
+            res.body("");
+            return res.body();
+        });
+
     }
 
 
@@ -284,7 +403,7 @@ public class Routes {
     }
 
     //returns a json of a map that has attributes of the given user
-    private Object getProfile(Response res, Optional<User> user) throws IOException {
+    private Object getProfile(Response res, Optional<User> user, String mail) throws IOException {
         if (user.isEmpty()){
             res.body("ERROR");
             res.status(404);
@@ -296,6 +415,8 @@ public class Routes {
         }
         return res.body();
     }
+
+    //deletes
 
 
 

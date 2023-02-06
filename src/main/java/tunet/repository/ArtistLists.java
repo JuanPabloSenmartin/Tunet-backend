@@ -1,14 +1,13 @@
 package tunet.repository;
 
-import tunet.model.ArtistListInPost;
-import tunet.model.Post;
+import tunet.Util.Base64Parser;
+import tunet.model.*;
 import tunet.persistence.Transactions;
 import tunet.persistence.EntityManagers;
 import javax.persistence.EntityManager;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.io.IOException;
+import java.util.*;
 
 
 public class ArtistLists {
@@ -25,7 +24,7 @@ public class ArtistLists {
 
         final ArtistListInPost newArtistList = ArtistListInPost.create(newID, postID, artistEmail);
 
-        if (exists(newArtistList.getId())) throw new IllegalStateException("Post id already exists.");
+        if (exists(newArtistList.getId())) throw new IllegalStateException("id already exists.");
 
         return Transactions.persist(newArtistList);
     }
@@ -49,9 +48,9 @@ public class ArtistLists {
     }
 
     public Optional<ArtistListInPost> findByID(String id) {
-        return Transactions.tx(() -> EntityManagers.currentEntityManager()
+        return entityManager
                 .createQuery("SELECT u FROM ArtistListInPost u WHERE u.id LIKE :id", ArtistListInPost.class)
-                .setParameter("id", id).getResultList()).stream()
+                .setParameter("id", id).getResultList().stream()
                 .findFirst();
     }
 
@@ -78,9 +77,41 @@ public class ArtistLists {
         }
         return finalList;
     }
-    private List<ArtistListInPost> getArtistsFromMail(String artistEmail) {
+    public List<ArtistListInPost> getArtistsFromMail(String artistEmail) {
         return entityManager.createQuery("SELECT u FROM ArtistListInPost u WHERE u.artistEmail LIKE :artistEmail", ArtistListInPost.class)
                 .setParameter("artistEmail", artistEmail)
                 .getResultList();
+    }
+
+    public String getAcceptedUser(String postId) {
+        List<ArtistListInPost> list = listFromPostID(postId);
+        for (ArtistListInPost a : list){
+            if (a.getAccepted().equals("TRUE")) return a.getArtistEmail();
+        }
+        return "";
+    }
+
+    public ArtistListInPost deleteArtistList(String postID, String mail) {
+        Optional<ArtistListInPost> entity = getEntity(postID, mail);
+        entity.ifPresent(Transactions::remove);
+        return null;
+    }
+
+    public Optional<ArtistListInPost> getEntity(String postID, String artistEmail) {
+        return entityManager.createQuery("SELECT u FROM ArtistListInPost u WHERE u.artistEmail LIKE :artistEmail AND u.postID LIKE :postID", ArtistListInPost.class)
+                .setParameter("artistEmail", artistEmail).setParameter("postID", postID)
+                .getResultList().stream()
+                .findFirst();
+    }
+    public List<ArtistListInfo> getArtistListData(String postID, Users users) throws IOException {
+        List<ArtistListInPost> list = listFromPostID(postID);
+        List<ArtistListInfo> result = new ArrayList<>();
+        for (ArtistListInPost item : list){
+            Optional<User> artist = users.findByEmail(item.getArtistEmail());
+            if (artist.isPresent()){
+                result.add(new ArtistListInfo(item.getId(), item.getArtistEmail(), artist.get().getIntRating(), Base64Parser.convertToBase64(artist.get().getProfilePictureUrl())));
+            }
+        }
+        return result;
     }
 }

@@ -1,19 +1,17 @@
 package tunet;
 
-import spark.Response;
 import tunet.Util.Base64Parser;
+import tunet.Util.LocationManager;
 import tunet.model.*;
 import tunet.persistence.EntityManagers;
 import tunet.persistence.Transactions;
-import tunet.repository.ArtistLists;
-import tunet.repository.Chats;
-import tunet.repository.Posts;
-import tunet.repository.Users;
+import tunet.repository.*;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.function.Function;
 
@@ -37,9 +35,18 @@ public class TunetSystem {
             return users.exists(form.getEmail()) ? null : users.createUser(form);
         });
     }
-    public void editProfile(EditProfileForm form) {
-        User user = findUserByEmail(form.getEmail()).get();
-        Transactions.update(user, form);
+    public Object editProfile(EditProfileForm form) {
+        return runInTransaction(
+                ds -> {
+                    User user = ds.users().findByEmail(form.getEmail()).get();
+                    user.setDescription(form.getDescription());
+                    user.setCoordinates(LocationManager.getCoordinates(form.getLocation()));
+                    user.setLocation(form.getLocation());
+                    user.setUsername(form.getUsername());
+                    user.setPhoneNumber(form.getPhoneNumber());
+                    return user;
+                }
+        );
     }
 
     public Optional<User> findUserByEmail(String email) {
@@ -76,22 +83,16 @@ public class TunetSystem {
         Map<String, String> map = new HashMap<>();
         if (user.isArtist()){
             map.put("email", user.getEmail());
-            map.put("audioUrl", Base64Parser.convertToBase64(user.getArtistAudioUrl()));
             map.put("username", user.getUsername());
             map.put("description", user.getDescription());
-            map.put("pictureUrl", Base64Parser.convertToBase64(user.getPictureUrl()));
-            map.put("profilePictureUrl", Base64Parser.convertToBase64(user.getProfilePictureUrl()));
             map.put("location", user.getLocation());
             map.put("phoneNumber", user.getPhoneNumber());
             map.put("rating", rating(user.getRating()));
-
         }
         else {
             map.put("email", user.getEmail());
             map.put("username", user.getUsername());
             map.put("description", user.getDescription());
-            map.put("pictureUrl", Base64Parser.convertToBase64(user.getPictureUrl()));
-            map.put("profilePictureUrl", Base64Parser.convertToBase64(user.getProfilePictureUrl()));
             map.put("location", user.getLocation());
             map.put("phoneNumber", user.getPhoneNumber());
             map.put("rating", rating(user.getRating()));
@@ -114,29 +115,43 @@ public class TunetSystem {
         });
     }
 
-    public ArtistListInPost addArtistList(String postID, String artistEmail, Response res){
+    public ArtistListInPost addArtistList(String postID, String artistEmail){
         return runInTransaction(datasource -> {
             final ArtistLists artistLists = datasource.artistLists();
                 return artistLists.createArtistList(postID, artistEmail);
         });
     }
-    public List<Post> getPosts(String mail) {
-        return runInTransaction(
-                ds -> ds.posts().listFromMail(mail)
-        );
-    }
+
     public List<ArtistListInPost> getArtistList(String postID) {
         return runInTransaction(
                 ds -> ds.artistLists().listFromPostID(postID)
         );
     }
 
-    public List<Post> getAllPosts(String mail) {
+    public List<PostInfo> getFilteredPosts(String artistMail, FilterForm form) {
         return runInTransaction(
                 ds -> {
                     Posts posts = ds.posts();
-                    List<String> postsIDs = ds.artistLists().getPostIdsFromMail(mail, posts.listAllPosts());
-                    return posts.listThesePosts(postsIDs);
+                    Users users = ds.users();
+                    List<String> postsIDs = ds.artistLists().getPostIdsFromMail(artistMail, posts.listAllPosts());
+                    try {
+                        return posts.listThesePosts(postsIDs, users, users.findByEmail(artistMail).get().getCoordinates(), form);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+
+        );
+    }
+    public List<PostInfo> getAllPosts(FilterForm form) {
+        return runInTransaction(
+                ds -> {
+                    Posts posts = ds.posts();
+                    try {
+                        return posts.listFilteredPostsInDiscover(posts.listAllPosts(), ds.users(), form);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
 
         );
@@ -156,36 +171,37 @@ public class TunetSystem {
     }
 
     public void addChats(String emailME, String emailHIM, String messageME, boolean isArtistMe) {
-        Chat chat = getChat(emailME, emailHIM);
-        if (chat == null){
-            if (isArtistMe){
-                createChat(emailHIM, emailME, "2" + messageME);
-            }
-            else{
-                createChat(emailME, emailHIM, "1" + messageME);
-            }
-        }
-        else{
-            runInTransaction(
-                    ds -> {
-                        Chats chats = ds.chats();
+        runInTransaction(
+                ds -> {
+                    Chats chats = ds.chats();
+                    Chat chat = getChat(emailME, emailHIM, chats, ds.users());
+                    if (chat == null || chat.getMessages().equals("")){
                         if (isArtistMe){
-                            return chats.updateChat(chat, "~2" + messageME);
+                            createChat(emailHIM, emailME, "2" + messageME, chats);
                         }
                         else{
-                            return chats.updateChat(chat, "~1" + messageME);
+                            createChat(emailME, emailHIM, "1" + messageME, chats);
                         }
                     }
-            );
+                    else{
+                        if (isArtistMe){
+                            updateChat(chat, "~2" + messageME);
+                        }
+                        else{
+                            updateChat(chat, "~1" + messageME);
 
-        }
-    }
-    private Chat createChat(String emailLocal, String emailArtist, String initialMessage) {
-        return runInTransaction(
-                ds -> {
-                        return ds.chats().createChat(emailLocal, emailArtist, initialMessage);
+                        }
+                    }
+                    return chat;
                 }
         );
+    }
+
+    private void updateChat(Chat chat, String message){
+        chat.setMessages(chat.getMessages() + message);
+    }
+    private Chat createChat(String emailLocal, String emailArtist, String initialMessage, Chats chats) {
+        return chats.createChat(emailLocal, emailArtist, initialMessage);
     }
     public List<ChatForm> getChatsInfo(String mail) throws IOException {
         List<ChatForm> chatForms = new ArrayList<>();
@@ -216,49 +232,362 @@ public class TunetSystem {
     }
 
     public ChatForm getCertainChat(String emailME, String emailHIM) throws IOException {
-        Chat chat = getChat(emailME, emailHIM);
-        User me = findUserByEmail(emailME).get();
-        User him = findUserByEmail(emailHIM).get();
-        if (chat == null) {
-            return new ChatForm(
-                    "0",
-                    emailME,
-                    him.getEmail(),
-                    Base64Parser.convertToBase64(him.getPictureUrl()),
-                    Base64Parser.convertToBase64(me.getPictureUrl()),
-                    him.getUsername(),
-                    me.getUsername(),
-                    String.valueOf(me.isArtist()));
-        }
-        return new ChatForm(
-                chat.getId(),
-                emailME,
-                him.getEmail(),
-                Base64Parser.convertToBase64(him.getPictureUrl()),
-                Base64Parser.convertToBase64(me.getPictureUrl()),
-                him.getUsername(),
-                me.getUsername(),
-                String.valueOf(me.isArtist()));
-    }
-
-    private Chat getChat(String emailME, String emailHIM){
-        boolean isArtistME = findUserByEmail(emailME).get().isArtist();
         return runInTransaction(
-                ds -> ds.chats().certainChat(emailME,emailHIM, isArtistME)
+                ds -> {
+                    Chats chats = ds.chats();
+                    Users users = ds.users();
+                    Chat chat = getChat(emailME, emailHIM, chats, users);
+                    User me = users.findByEmail(emailME).get();
+                    User him = users.findByEmail(emailHIM).get();
+                    if (chat == null) {
+                        try {
+                            return new ChatForm(
+                                    "0",
+                                    emailME,
+                                    him.getEmail(),
+                                    Base64Parser.convertToBase64(him.getProfilePictureUrl()),
+                                    Base64Parser.convertToBase64(me.getProfilePictureUrl()),
+                                    him.getUsername(),
+                                    me.getUsername(),
+                                    String.valueOf(me.isArtist()));
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                    else {
+                        try {
+                            return new ChatForm(
+                                    chat.getId(),
+                                    emailME,
+                                    him.getEmail(),
+                                    Base64Parser.convertToBase64(him.getProfilePictureUrl()),
+                                    Base64Parser.convertToBase64(me.getProfilePictureUrl()),
+                                    him.getUsername(),
+                                    me.getUsername(),
+                                    String.valueOf(me.isArtist()));
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                }
         );
     }
 
+    private Chat getChat(String emailME, String emailHIM, Chats chats, Users users){
+        boolean isArtistME = users.findByEmail(emailME).get().isArtist();
+        return chats.certainChat(emailME, emailHIM, isArtistME);
+//        return runInTransaction(
+//                ds -> ds.chats().certainChat(emailME,emailHIM, isArtistME)
+//        );
+    }
+
     public String getMessages(String emailME, String emailHIM) {
-        Chat chat = getChat(emailME, emailHIM);
-        if (chat == null) {
-            chat = createChat(emailME, emailHIM, "");
-        }
-        return chat.getMessages();
+        return runInTransaction(
+                ds -> {
+                    Chats chats = ds.chats();
+                    Users users = ds.users();
+                    Chat chat = getChat(emailME, emailHIM, chats, users);
+                    if (chat == null) {
+                        chat = createChat(emailME, emailHIM, "", chats);
+                    }
+                    return chat.getMessages();
+                }
+        );
     }
 
     public void addRating(String email, int rating) {
         runInTransaction(
                 ds -> ds.users().updateRating(email, rating)
         );
+    }
+
+
+    public Image addImageToGallery(GalleryImageForm imageForm) {
+        return runInTransaction(
+                ds -> {
+                    Images images = ds.images();
+                    int id = images.getMaxId() + 1;
+                    return images.createImage(imageForm.getEmail(), Base64Parser.createImageFile(imageForm.getImageUrl(), imageForm.getEmail(), "galleryImage", id));
+                }
+        );
+    }
+
+    public List<String> getGalleryImagesFromEmail(String mail) {
+        return runInTransaction(
+                ds -> {
+                    List<Image> images = ds.images().getAllImagesFromEmail(mail);
+                    List<String> base64Imgs = new ArrayList<>();
+                    for(Image image : images){
+                        try {
+                            base64Imgs.add(Base64Parser.convertToBase64(image.getImageUrl()));
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                    return base64Imgs;
+                }
+        );
+
+    }
+
+    public Image deleteImageFromGallery(GalleryImageForm imageForm) {
+        return runInTransaction(
+                ds -> {
+                    try {
+                        return ds.images().deleteImage(imageForm.getImageUrl(), imageForm.getEmail());
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+        );
+    }
+
+    public User changeProfilePic(String email, String imageUrl) {
+        return runInTransaction(
+                ds -> {
+                    Users users = ds.users();
+                    User user = users.findByEmail(email).get();
+                    return updateProfilePicture(user, imageUrl);
+                }
+        );
+    }
+    public User updateProfilePicture(User user, String profilePic){
+        Base64Parser.deletePath(user.getProfilePictureUrl());
+        user.setProfilePictureUrl(Base64Parser.createImageFile(profilePic, user.getEmail(), "profilePicture"));
+        return user;
+    }
+
+    public List<String> getSongsFromEmail(String mail) {
+        return runInTransaction(
+                ds -> {
+                    List<Song> songs = ds.songs().getAllSongsFromEmail(mail);
+                    List<String> base64Songs = new ArrayList<>();
+                    for(Song image : songs){
+                        try {
+                            base64Songs.add(Base64Parser.convertToBase64(image.getSongUrl()));
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                    return base64Songs;
+                }
+        );
+    }
+
+    public Song addSongToGallery(GallerySongForm songForm) {
+        return runInTransaction(
+                ds -> {
+                    Songs songs = ds.songs();
+                    int id = songs.getMaxId() + 1;
+                    return songs.createSong(songForm.getEmail(), Base64Parser.createImageFile(songForm.getSongUrl(), songForm.getEmail(), "song", id));
+                }
+        );
+    }
+
+    public Song deleteSongFromGallery(GallerySongForm songForm) {
+        return runInTransaction(
+                ds -> {
+                    try {
+                        return ds.songs().deleteSong(songForm.getSongUrl(), songForm.getEmail());
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+        );
+    }
+
+
+
+    public List<OldPostInfo> getOldPosts(String mail) {
+        return runInTransaction(
+                ds -> {
+                    List<OldPostInfo> result = new ArrayList<>();
+                    ArtistLists artistLists = ds.artistLists();
+                    Posts posts = ds.posts();
+                    List<Post> list = posts.listFromMail(mail);
+                    for (Post post : list) {
+                        if (post.getConvertedDate().isBefore(LocalDate.now())){
+                            String accepterUser = artistLists.getAcceptedUser(post.getId());
+                            result.add(new OldPostInfo(post.getDate(), post.getDescription(), post.getLocalEmail(), post.getTitle(), accepterUser));
+                        }
+                    }
+                    return result;
+                }
+        );
+    }
+
+    public List<LocalPostInfo> getPostsOfLocal(String mail) {
+        return runInTransaction(
+                ds -> {
+                    ArtistLists artistLists = ds.artistLists();
+                    Posts posts = ds.posts();
+                    Users users = ds.users();
+                    List<LocalPostInfo> result = new ArrayList<>();
+                    List<Post> postList = posts.listFromMail(mail);
+                    for (Post post : postList) {
+                        if (post.getConvertedDate().isAfter(LocalDate.now()) && !post.isAccepted()){
+                            try {
+                                result.add(new LocalPostInfo(post.getId(), post.getLocalEmail(), post.getDescription(),post.getTitle(), post.getDate(), post.getGenres(), artistLists.getArtistListData(post.getId(), users)));
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                    }
+                    return result;
+                }
+        );
+    }
+
+    public ArtistListInPost deleteArtistList(String postID, String mail) {
+        return runInTransaction(ds -> {
+            return ds.artistLists().deleteArtistList(postID, mail);
+        });
+    }
+
+    public List<PostInfo> getSpecificPosts(String mail, PostTypeForm form) {
+        return runInTransaction(
+                ds -> {
+                    Posts posts = ds.posts();
+                    Users users = ds.users();
+                    ArtistLists artistLists = ds.artistLists();
+                    List<PostInfo> result = new ArrayList<>();
+                    List<ArtistListInPost> list = artistLists.getArtistsFromMail(mail);
+                    User me = users.findByEmail(mail).get();
+                    for (ArtistListInPost artistListInPost : list) {
+                        Optional<Post> post = posts.findByPostID(artistListInPost.getPostID());
+                        if (post.isPresent()) {
+                            Post p = post.get();
+                            Optional<User> localUser = users.findByEmail(p.getLocalEmail());
+                            if (localUser.isPresent()){
+                                boolean valid = false;
+                                switch (form.getType()){
+                                    case "postulated": {
+                                        valid = isPostulatedPost(p, artistListInPost);
+                                        break;
+                                    }
+                                    case "accepted": {
+                                        valid = isAcceptedPost(p, artistListInPost);
+                                        break;
+                                    }
+                                    case "previous":{
+                                        valid = isPreviousPost(p, artistListInPost);
+                                        break;
+                                    }
+                                    default:break;
+                                }
+                                if (valid){
+                                    User u = localUser.get();
+                                    try {
+                                        result.add(new PostInfo(p.getId(), p.getDate(), p.getDescription(), p.getLocalEmail(), p.getTitle(), p.getGenres(), u.getIntRating(), Base64Parser.convertToBase64(u.getProfilePictureUrl()), "" + LocationManager.getDistance(u.getCoordinates(), me.getCoordinates()), mail));
+                                    } catch (IOException e) {
+                                        throw new RuntimeException(e);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    return result;
+                }
+
+        );
+    }
+    private boolean isPostulatedPost(Post post, ArtistListInPost artistListInPost){
+        return post.getConvertedDate().isAfter(LocalDate.now()) && !artistListInPost.isAccepted();
+    }
+    private boolean isAcceptedPost(Post post, ArtistListInPost artistListInPost){
+        return (post.getConvertedDate().isAfter(LocalDate.now()) || post.getConvertedDate().isEqual(LocalDate.now())) && artistListInPost.isAccepted();
+    }
+    private boolean isPreviousPost(Post post, ArtistListInPost artistListInPost){
+        return post.getConvertedDate().isBefore(LocalDate.now()) && artistListInPost.isAccepted();
+    }
+
+    public void acceptArtistInPost(AcceptArtistForm form) {
+        runInTransaction(
+                ds -> {
+                    Posts posts = ds.posts();
+                    ArtistLists artistLists = ds.artistLists();
+                    ArtistListInPost artistListInPost = findArtistListInPostById(form.getArtistListId(), artistLists);
+                    Post post = findPostById(form.getPostId(), posts);
+                    updatePostIsAccepted(post, true, artistListInPost.getArtistEmail());
+                    updateArtistListInPostIsAccepted(artistListInPost,true);
+                    return null;
+                }
+        );
+//        ArtistListInPost artistListInPost = findArtistListInPostById(form.getArtistListId());
+//        Post post = findPostById(form.getPostId());
+//        Transactions.updatePost(post, true, artistListInPost.getArtistEmail());
+//        Transactions.updateArtistListInPost(artistListInPost,true);
+
+    }
+    private void updateArtistListInPostIsAccepted(ArtistListInPost artistListInPost, boolean isAccepted){
+            artistListInPost.setAccepted(isAccepted ? "TRUE" : "FALSE");
+    }
+    private void updatePostIsAccepted(Post post, boolean isAccepted, String artistMail){
+        if (isAccepted){
+            post.setIsAccepted("TRUE");
+            post.setAcceptedArtistEmail(artistMail);
+        }
+        else{
+            post.setIsAccepted("FALSE");
+            post.setAcceptedArtistEmail(null);
+        }
+    }
+    private Post findPostById(String id, Posts posts){
+        return posts.findByPostID(id).get();
+//        return runInTransaction(
+//                ds -> ds.posts().findByPostID(id).get()
+//        );
+    }
+    private ArtistListInPost findArtistListInPostById(String id, ArtistLists artistLists){
+        return artistLists.findByID(id).get();
+//        return runInTransaction(
+//                ds -> ds.artistLists().findByID(id).get()
+//        );
+    }
+
+    public List<LocalPostInfo> getLocalSpecificPosts(String mail, PostTypeForm form) {
+        return runInTransaction(
+                ds -> {
+                    Posts posts = ds.posts();
+                    Users users = ds.users();
+                    ArtistLists artistLists = ds.artistLists();
+                    List<LocalPostInfo> result = new ArrayList<>();
+
+                    List<Post> list = posts.listFromMail(mail);
+                    User localEmail = users.findByEmail(mail).get();
+                    for (Post post : list) {
+                        boolean valid = false;
+                        switch (form.getType()){
+                            case "accepted": {
+                                valid = isAcceptedLocalPost(post);
+                                break;
+                            }
+                            case "previous":{
+                                valid = isPreviousLocalPost(post);
+                                break;
+                            }
+                            default: continue;
+                        }
+                        Optional<User> artistOptional = users.findByEmail(post.getAcceptedArtistEmail());
+                        if (valid && artistOptional.isPresent()){
+                            User artist = artistOptional.get();
+                            List<ArtistListInfo> a = new ArrayList<>();
+                            try {
+                                a.add(new ArtistListInfo(artist.getEmail(), artist.getEmail(), artist.getIntRating(), Base64Parser.convertToBase64(artist.getProfilePictureUrl())));
+                                result.add(new LocalPostInfo(post.getId(), post.getLocalEmail(), post.getDescription(),post.getTitle(), post.getDate(), post.getGenres(), a));
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                    }
+                    return result;
+                }
+        );
+    }
+    private boolean isAcceptedLocalPost(Post post){
+        return (post.getConvertedDate().isAfter(LocalDate.now()) || post.getConvertedDate().isEqual(LocalDate.now())) && post.isAccepted();
+    }
+    private boolean isPreviousLocalPost(Post post){
+        return post.getConvertedDate().isBefore(LocalDate.now()) && post.isAccepted();
     }
 }

@@ -1,4 +1,4 @@
-package tunet.model;
+package tunet.model.forms;
 
 public class OldPostInfo {
     private final String date;

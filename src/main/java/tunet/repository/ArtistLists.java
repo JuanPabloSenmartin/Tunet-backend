@@ -2,8 +2,9 @@ package tunet.repository;
 
 import tunet.Util.Base64Parser;
 import tunet.model.*;
+import tunet.model.forms.ArtistListInfo;
 import tunet.persistence.Transactions;
-import tunet.persistence.EntityManagers;
+
 import javax.persistence.EntityManager;
 
 import java.io.IOException;

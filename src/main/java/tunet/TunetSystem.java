@@ -4,8 +4,8 @@ import tunet.Mail.MailManager;
 import tunet.Util.Base64Parser;
 import tunet.Util.LocationManager;
 import tunet.model.*;
+import tunet.model.forms.*;
 import tunet.persistence.EntityManagers;
-import tunet.persistence.Transactions;
 import tunet.repository.*;
 
 import javax.persistence.EntityManager;

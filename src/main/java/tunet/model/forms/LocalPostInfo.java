@@ -1,4 +1,4 @@
-package tunet.model;
+package tunet.model.forms;
 
 import java.util.List;
 

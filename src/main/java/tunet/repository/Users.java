@@ -1,10 +1,10 @@
 package tunet.repository;
 
 import tunet.Util.Base64Parser;
-import tunet.model.RegistrationUserForm;
+import tunet.model.forms.RegistrationUserForm;
 import tunet.model.User;
 import tunet.persistence.Transactions;
-import tunet.persistence.EntityManagers;
+
 import javax.persistence.EntityManager;
 import java.io.IOException;
 import java.util.Optional;

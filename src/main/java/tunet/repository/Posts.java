@@ -2,8 +2,11 @@ package tunet.repository;
 import tunet.Util.Base64Parser;
 import tunet.model.*;
 import tunet.Util.LocationManager;
+import tunet.model.forms.FilterForm;
+import tunet.model.forms.PostForm;
+import tunet.model.forms.PostInfo;
 import tunet.persistence.Transactions;
-import tunet.persistence.EntityManagers;
+
 import javax.persistence.EntityManager;
 import java.io.IOException;
 import java.time.LocalDate;

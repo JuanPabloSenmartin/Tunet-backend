@@ -1,4 +1,4 @@
-package tunet.model;
+package tunet.model.forms;
 
 public class Auth {
     private final String token;

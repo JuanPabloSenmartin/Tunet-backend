@@ -26,10 +26,6 @@ public class MailManager {
             mensaje.addRecipient(Message.RecipientType.TO, new InternetAddress(to));
             mensaje.setSubject(header);
             mensaje.setText(text);
-//            mensaje.setContent(
-//                    "<h1>" + text + "</h1>",
-//                    "text/html");
-
             Transport t = s.getTransport("smtp");
             t.connect(from,password);
             t.sendMessage(mensaje, mensaje.getAllRecipients());

@@ -1,4 +1,4 @@
-package tunet.model;
+package tunet.model.forms;
 
 public class PostInfo {
     private final String id;

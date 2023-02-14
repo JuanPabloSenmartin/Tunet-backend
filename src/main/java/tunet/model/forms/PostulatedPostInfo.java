@@ -1,4 +1,4 @@
-package tunet.model;
+package tunet.model.forms;
 
 public class PostulatedPostInfo {
     private final String date;

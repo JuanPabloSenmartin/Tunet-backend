@@ -22,6 +22,10 @@ public class Transactions {
             return entity;
         });
     }
+    public static <R> R persist(R entity, EntityManager entityManager) {
+        entityManager.persist(entity);
+        return entity;
+    }
     public static Chat persistNewChat(Chat chat, EntityManager entityManager) {
         entityManager.persist(chat);
         return chat;
@@ -32,6 +36,9 @@ public class Transactions {
             entityManager.remove(entity);
             return null;
         });
+    }
+    public static <R> void remove(R entity, EntityManager entityManager){
+            entityManager.remove(entity);
     }
 //    public static User updateRating(User user, String rating) {
 //        return tx(entityManager -> {

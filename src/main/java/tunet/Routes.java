@@ -330,7 +330,7 @@ public class Routes {
             return res.body();
         });
 
-        //deletes an image from gallery
+        //change profile pic
         post("/changeProfilePic", (req, res) -> {
             GalleryImageForm imageForm = GalleryImageForm.createFromJson(req.body());
             system.changeProfilePic(imageForm.getEmail(), imageForm.getImageUrl());
@@ -385,6 +385,65 @@ public class Routes {
         post("/acceptArtistInPost", (req, res) -> {
             AcceptArtistForm form = AcceptArtistForm.createFromJson(req.body());
             system.acceptArtistInPost(form);
+            res.status(201);
+            res.body("");
+            return res.body();
+        });
+
+        //send email
+        post("/sendMail", (req, res) -> {
+            SendMailForm form = SendMailForm.createFromJson(req.body());
+            String mail = emailByToken.getIfPresent(form.getToken());
+            system.sendEmail(form, mail);
+            res.status(201);
+            res.body("");
+            return res.body();
+        });
+
+        //get notifications
+        post("/getNotifications", (req, res) -> {
+            String token = removeFirstandLast(req.body());
+            String mail = emailByToken.getIfPresent(token);
+
+            final List<Notification> notifications = system.getNotifications(mail);
+            res.status(201);
+            res.body(JsonParser.toJson(notifications));
+            return res.body();
+        });
+
+        //delete notification
+        post("/deleteNotification", (req, res) -> {
+            String notificationId = removeFirstandLast(req.body());
+
+            system.deleteNotification(notificationId);
+            res.status(201);
+            res.body("");
+            return res.body();
+        });
+
+        //see notifications
+        post("/seeNotifications", (req, res) -> {
+            String token = removeFirstandLast(req.body());
+            String mail = emailByToken.getIfPresent(token);
+
+            system.seeNotifications(mail);
+            res.status(201);
+            res.body("");
+            return res.body();
+        });
+
+        //delete post
+        post("/deletePost", (req, res) -> {
+            String id = removeFirstandLast(req.body());
+            system.deletePost(id);
+            res.status(201);
+            res.body("");
+            return res.body();
+        });
+        //reject an accepted artist in post
+        post("/rejectAcceptedArtist", (req, res) -> {
+            String id = removeFirstandLast(req.body());
+            system.rejectAcceptedArtist(id);
             res.status(201);
             res.body("");
             return res.body();

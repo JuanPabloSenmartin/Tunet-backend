@@ -26,7 +26,7 @@ public class ArtistLists {
 
         if (exists(newArtistList.getId())) throw new IllegalStateException("id already exists.");
 
-        return Transactions.persist(newArtistList);
+        return Transactions.persist(newArtistList, entityManager);
     }
     private int getMaxId(){
         List<ArtistListInPost> list = getList();
@@ -64,18 +64,17 @@ public class ArtistLists {
         List<ArtistListInPost> list = getArtistsFromMail(artistEmail);
         List<String> finalList = new ArrayList<>();
         for (Post post : posts) {
-            boolean current = false;
-            for (ArtistListInPost artistListInPost : list) {
-                if (post.getId().equals(artistListInPost.getPostID())) {
-                    current = true;
-                    break;
-                }
-            }
-            if (!current) {
-                finalList.add(post.getId());
-            }
+            if (isValid(list, post)) finalList.add(post.getId());
         }
         return finalList;
+    }
+    public boolean isValid(List<ArtistListInPost> list, Post post){
+        for (ArtistListInPost artistListInPost : list) {
+            if (post.getId().equals(artistListInPost.getPostID()) || post.isAccepted()) {
+                return false;
+            }
+        }
+        return true;
     }
     public List<ArtistListInPost> getArtistsFromMail(String artistEmail) {
         return entityManager.createQuery("SELECT u FROM ArtistListInPost u WHERE u.artistEmail LIKE :artistEmail", ArtistListInPost.class)
@@ -93,7 +92,9 @@ public class ArtistLists {
 
     public ArtistListInPost deleteArtistList(String postID, String mail) {
         Optional<ArtistListInPost> entity = getEntity(postID, mail);
-        entity.ifPresent(Transactions::remove);
+        if (entity.isPresent()){
+            Transactions.remove(entity.get(),entityManager);
+        }
         return null;
     }
 

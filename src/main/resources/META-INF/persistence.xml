@@ -14,6 +14,7 @@
         <class>tunet.model.Chat</class>
         <class>tunet.model.Image</class>
         <class>tunet.model.Song</class>
+        <class>tunet.model.Notification</class>
 
         <properties>
             <property name="javax.persistence.jdbc.driver" value="org.hsqldb.jdbc.JDBCDriver" />

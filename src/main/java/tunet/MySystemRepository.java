@@ -12,6 +12,7 @@ public class MySystemRepository {
     private final Chats chats;
     private final Images images;
     private final Songs songs;
+    private final Notifications notifications;
 
     public MySystemRepository(EntityManager entityManager) {
         this.entityManager = entityManager;
@@ -21,6 +22,7 @@ public class MySystemRepository {
         this.chats = new Chats(entityManager);
         this.images = new Images(entityManager);
         this.songs = new Songs(entityManager);
+        this.notifications = new Notifications(entityManager);
     }
 
     public static MySystemRepository create(EntityManager entityManager) {
@@ -35,6 +37,9 @@ public class MySystemRepository {
     public Chats chats(){return chats;}
     public Images images(){return images;}
     public Songs songs(){return songs;}
+    public Notifications notifications() {
+        return notifications;
+    }
 
     public EntityManager getEntityManager() {
         return entityManager;

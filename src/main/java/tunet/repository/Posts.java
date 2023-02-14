@@ -28,7 +28,7 @@ public class Posts {
 
         if (exists(newPost.getId())) throw new IllegalStateException("Post id already exists.");
 
-        return Transactions.persist(newPost);
+        return Transactions.persist(newPost, entityManager);
     }
     private String getGenres(String[] genres){
         if (genres.length == 0){ return "any";}
@@ -53,7 +53,6 @@ public class Posts {
 
     private List<Post> getPostList() {
         return
-//                EntityManagers.currentEntityManager()
                         entityManager
                         .createQuery("SELECT u FROM Post u", Post.class)
                 .getResultList();
@@ -64,19 +63,12 @@ public class Posts {
     }
 
     public Optional<Post> findByPostID(String id) {
-//        return Transactions.tx(() ->
-//                EntityManagers.currentEntityManager()
-//                .createQuery("SELECT u FROM Post u WHERE u.id LIKE :id", Post.class)
-//                .setParameter("id", id).getResultList()).stream()
-//                .findFirst();
-        return entityManager
-                                .createQuery("SELECT u FROM Post u WHERE u.id LIKE :id", Post.class)
+        return entityManager.createQuery("SELECT u FROM Post u WHERE u.id LIKE :id", Post.class)
                                 .setParameter("id", id).getResultList().stream().findFirst();
     }
 
     public List<Post> listFromMail(String localEmail) {
         return
-//                EntityManagers.currentEntityManager()
         entityManager
                         .createQuery("SELECT u FROM Post u WHERE u.localEmail LIKE :localEmail", Post.class)
                 .setParameter("localEmail", localEmail)
@@ -85,7 +77,6 @@ public class Posts {
 
     public List<Post> listAllPosts() {
         return
-                //                EntityManagers.currentEntityManager()
                 entityManager
                         .createQuery("SELECT u FROM Post u", Post.class)
                 .getResultList();
@@ -112,13 +103,37 @@ public class Posts {
     private boolean passesFilter(Post post, User user, FilterForm form, int distance){
         //date
         if (post.getConvertedDate().isBefore(LocalDate.now())) return false;
+        //date range
+        if(!passesDateRangeFilter(post.getConvertedDate(), form.getDateRange())) return false;
         //distance
-        if (distance != -1 && (distance > form.getRange()[1] || distance < form.getRange()[0])) return false;
+        if (distance != -1 && form.getMaxDistance() != null && distance > form.getMaxDistance()) return false;
         //rating
         if (form.getRating() != null && (user.getIntRating() != form.getRating())) return false;
         //genres
         return passesGenreFilter(post, form);
     }
+
+    public boolean passesDateRangeFilter(LocalDate postDate, String[] dateRange) {
+        LocalDate initialDate = convertToLocalDate(dateRange[0]);
+        LocalDate endDate = convertToLocalDate(dateRange[1]);
+
+        if (initialDate == null && endDate == null) return true;
+        if (initialDate == null && postDate.isBefore(endDate)){
+            return true;
+        }
+        if (endDate == null && !postDate.isBefore(initialDate)){
+            return true;
+        }
+        if (initialDate.isEqual(postDate) || endDate.isEqual(postDate)) return true;
+        return !postDate.isBefore(initialDate) && postDate.isBefore(endDate);
+    }
+
+    private LocalDate convertToLocalDate(String s) {
+        if (s == null || s.equals("")) return null;
+        String[] str = s.split("-");
+        return LocalDate.of(Integer.parseInt(str[0]), Integer.parseInt(str[1]), Integer.parseInt(str[2].substring(0, 2)));
+    }
+
     private boolean passesGenreFilter(Post post, FilterForm form) {
         String[] postGenres = post.getGenresArray();
         String[] filterGenres = form.getGenres();
@@ -145,5 +160,13 @@ public class Posts {
             }
         }
         return finalList;
+    }
+
+    public Post deletePost(String id) {
+        Optional<Post> post = findByPostID(id);
+        if (post.isPresent()){
+            Transactions.remove(post.get(), entityManager);
+        }
+        return null;
     }
 }

@@ -26,7 +26,7 @@ public class Images {
         String newID = String.valueOf(lastId + 1);
         final Image newImage = Image.create(newID, email, imageUrl);
 
-        return Transactions.persist(newImage);
+        return Transactions.persist(newImage, entityManager);
     }
 
     public int getMaxId() {
@@ -42,17 +42,12 @@ public class Images {
     }
     private List<Image> getImageList() {
         return
-                //EntityManagers.currentEntityManager()
                 entityManager
                         .createQuery("SELECT u FROM Image u", Image.class)
                 .getResultList();
     }
 
     public List<Image> getAllImagesFromEmail(String email) {
-//        return Transactions.tx(() ->
-//                EntityManagers.currentEntityManager()
-//                        .createQuery("SELECT u FROM Image u WHERE u.email LIKE :email", Image.class)
-//                        .setParameter("email", email).getResultList());
         return
                 entityManager
                         .createQuery("SELECT u FROM Image u WHERE u.email LIKE :email", Image.class)
@@ -63,7 +58,7 @@ public class Images {
         Image image = getImage(imageUrl, mail);
         if (image != null){
             Base64Parser.deletePath(image.getImageUrl());
-            Transactions.remove(image);
+            Transactions.remove(image, entityManager);
         }
 
         return null;

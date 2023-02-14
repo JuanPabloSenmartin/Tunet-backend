@@ -19,7 +19,7 @@ public class Users {
 
         if (exists(newUser.getEmail())) throw new IllegalStateException("User already exists.");
 
-        return Transactions.persist(newUser);
+        return Transactions.persist(newUser, entityManager);
     }
 
     public boolean exists(String email) {
@@ -27,12 +27,7 @@ public class Users {
     }
 
     public Optional<User> findByEmail(String email) {
-//        return Transactions.tx(() ->
-////                        EntityManagers.currentEntityManager()
-//                        EntityManagers.currentEntityManager()
-//                .createQuery("SELECT u FROM User u WHERE u.email LIKE :email", User.class)
-//                .setParameter("email", email).getResultList()).stream()
-//                .findFirst();
+
         return entityManager.createQuery("SELECT u FROM User u WHERE u.email LIKE :email", User.class)
                 .setParameter("email", email).getResultList().stream()
                 .findFirst();
@@ -52,7 +47,6 @@ public class Users {
         int amountOfRatingsGiven = Integer.parseInt(str[1]);
         sumOfStars += rating;
         amountOfRatingsGiven += 1;
-//        return Transactions.updateRating(user, sumOfStars + "-" + amountOfRatingsGiven);
         return updateRating(user, sumOfStars + "-" + amountOfRatingsGiven);
     }
     private User updateRating(User user, String rating) {

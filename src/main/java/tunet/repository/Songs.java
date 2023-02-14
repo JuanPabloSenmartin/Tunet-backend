@@ -27,7 +27,7 @@ public class Songs {
         String newID = String.valueOf(lastId + 1);
         final Song newSong = Song.create(newID, email, imageUrl);
 
-        return Transactions.persist(newSong);
+        return Transactions.persist(newSong, entityManager);
     }
 
     public int getMaxId() {
@@ -43,17 +43,12 @@ public class Songs {
     }
     private List<Song> getSongList() {
         return
-                //EntityManagers.currentEntityManager()
                 entityManager
                         .createQuery("SELECT u FROM Song u", Song.class)
                 .getResultList();
     }
 
     public List<Song> getAllSongsFromEmail(String email) {
-//        return Transactions.tx(() ->
-//                EntityManagers.currentEntityManager()
-//                        .createQuery("SELECT u FROM Song u WHERE u.email LIKE :email", Song.class)
-//                        .setParameter("email", email).getResultList());
         return
                 entityManager
                         .createQuery("SELECT u FROM Song u WHERE u.email LIKE :email", Song.class)
@@ -64,7 +59,7 @@ public class Songs {
         Song song = getSong(songUrl, mail);
         if (song != null){
             Base64Parser.deletePath(song.getSongUrl());
-            Transactions.remove(song);
+            Transactions.remove(song, entityManager);
         }
 
         return null;

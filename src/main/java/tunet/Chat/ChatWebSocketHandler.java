@@ -23,9 +23,7 @@ public class ChatWebSocketHandler {
     @OnWebSocketMessage
     public void onMessage(Session session, String message) throws IOException {
         //emailME~emailHIM~message
-        System.out.println(message);   // Print message
         if(message.charAt(0) == '#') chatManager.emailSessionMap.put(message.substring(1), session);
-        //else if(message.substring(0,1).equals("~")) chatManager.persistOperation(message);
         else chatManager.handleMessage(message, session);
         }
 

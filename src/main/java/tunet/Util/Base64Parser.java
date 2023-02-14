@@ -63,23 +63,6 @@ public class Base64Parser {
         String[] s2 = s1[1].split(";");
 
         String extension = s2[0];
-//        switch (strings[0]) {//check file's extension
-//            case "data:image/jpeg;base64":
-//                extension = "jpeg";
-//                break;
-//            case "data:image/png;base64":
-//                extension = "png";
-//                break;
-//            case "data:audio/mpeg;base64":
-//                extension = "mpeg";
-//                break;
-//            default:
-//                extension = "jpg";
-//                break;
-//
-//        }
-
-
 
         //convert base64 string to binary data
         byte[] data = DatatypeConverter.parseBase64Binary(strings[1]);

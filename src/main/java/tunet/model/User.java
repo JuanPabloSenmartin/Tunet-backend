@@ -39,6 +39,7 @@ public class User {
         this.username = username;
         this.isArtist = isArtist;
         this.rating = "0-0";
+        this.profilePictureUrl = "src\\main\\resources\\images\\defaultPicture.jpg";
     }
 
     public static User create(String email,String username, String password, String isArtist) {
